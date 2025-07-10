@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     openai_key: str = Field(..., env="OPENAI_KEY")
     mongodb_uri: str = Field("mongodb://localhost:27017", env="MONGODB_URI")
     database_name: str = "autoforms"
-    allowed_origins: List[str] = ["*"]  # CORS – התאמה מהירה ל-frontend
+    allowed_origins: List[str] = ["*"]
     openai_model: str = "gpt-4o-mini"
     smtp_host: str = Field("smtp.gmail.com", env="SMTP_HOST")
     smtp_port: int = Field(587, env="SMTP_PORT")
