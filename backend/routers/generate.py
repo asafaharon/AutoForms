@@ -88,7 +88,7 @@ async def generate_html_preview(
 @router.post("/demo-generate", response_class=HTMLResponse)
 async def generate_demo_html(prompt: str = Form(...)):
     html = await generate_html_only(prompt)
-    return HTMLResponse(content=html)  # מחזיר רק את ה־HTML עצמו
+    return HTMLResponse(content=build_form_response_html(html, for_demo=True))
 
 
 @router.post("/save-form", response_class=HTMLResponse)
