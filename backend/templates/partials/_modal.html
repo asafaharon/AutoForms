@@ -1,0 +1,12 @@
+<!-- Modal container – קיים תמיד, מוסתר כברירת-מחדל -->
+<div id="modal"
+     class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
+  <!-- כאן HTMX יזריק את תוכן המודאל -->
+</div>
+
+<script>
+/* סגירת מודאל בלחיצה על “Cancel” או בכל אירוע אחר */
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+}
+</script>

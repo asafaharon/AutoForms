@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - AutoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body class="bg-gray-100">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md p-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-blue-700">דשבורד ניהול</h1>
+        <div>
+            <span class="text-gray-600">שלום, {{ user.username }}</span>
+            <a href="/logout" class="text-red-500 hover:text-red-700 ml-4">יציאה</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-8">
+        <h2 class="text-2xl font-semibold mb-6">סטטיסטיקות מערכת</h2>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Total Users Card -->
+            <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                <h3 class="text-lg font-medium text-gray-500 mb-2">סה"כ משתמשים</h3>
+                <p class="text-4xl font-bold text-blue-600">{{ total_users }}</p>
+            </div>
+
+            <!-- Total Forms Card -->
+            <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                <h3 class="text-lg font-medium text-gray-500 mb-2">סה"כ טפסים שנוצרו</h3>
+                <p class="text-4xl font-bold text-green-600">{{ total_forms }}</p>
+            </div>
+
+            <!-- Total Submissions Card -->
+            <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                <h3 class="text-lg font-medium text-gray-500 mb-2">סה"כ הגשות</h3>
+                <p class="text-4xl font-bold text-purple-600">{{ total_submissions }}</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

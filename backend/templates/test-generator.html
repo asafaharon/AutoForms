@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Smart Form Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        /* General styling */
+        body { font-family: 'Inter', sans-serif; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+
+        /* Custom scrollbar for preview */
+        #result-wrapper::-webkit-scrollbar { width: 8px; }
+        #result-wrapper::-webkit-scrollbar-track { background: #f1f5f9; }
+        #result-wrapper::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+
+        /* HTMX indicator defaults */
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline-block; }
+        .htmx-request.htmx-indicator { display: inline-block; }
+    </style>
+    <!-- Google Fonts (for Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-30 border-b border-slate-200">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+            <h1 class="text-xl font-bold text-blue-600">
+                <a href="/">AutoForms ✨</a>
+            </h1>
+            <a href="/api/dashboard" class="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors duration-200">
+                My Forms
+            </a>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+        <!-- Step 1: The Prompt -->
+        <section id="step-1" class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200/80 space-y-5 fade-in">
+            <div class="text-center">
+                <span class="text-sm font-bold uppercase text-blue-600 bg-blue-100 px-3 py-1 rounded-full">Step 1</span>
+                <h2 class="text-2xl font-bold mt-2">What would you like to create?</h2>
+                <p class="text-slate-500 mt-1">Describe the form, letter, or questionnaire you need. Be as detailed as possible!</p>
+            </div>
+
+            <!-- Templates -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <h3 class="font-semibold text-slate-600 mb-3 text-center text-sm">Or, choose a ready-made template:</h3>
+                <div class="flex flex-wrap gap-2 justify-center">
+<!-- טפסים קלאסיים -->
+<button type="button" onclick="setPrompt('A registration form for a children\'s enrichment class')" class="bg-white hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-1.5 rounded-full transition">📄 Class Registration</button>
+<button type="button" onclick="setPrompt('A feedback survey for students at the end of a course')" class="bg-white hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-1.5 rounded-full transition">📝 Feedback Survey</button>
+<button type="button" onclick="setPrompt('A letter of recommendation for a candidate for a development position')" class="bg-white hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-1.5 rounded-full transition">🧾 Recommendation Letter</button>
+<button type="button" onclick="setPrompt('A vacation request form for work')" class="bg-white hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-1.5 rounded-full transition">🏖️ Vacation Request</button>
+
+<!-- תוספות מקוריות לשדרוג הרושם 👇 -->
+<button type="button" onclick="setPrompt('An influencer collaboration request form for social media campaigns')" class="bg-white hover:bg-slate-200 border border-pink-300 text-pink-700 text-xs px-3 py-1.5 rounded-full transition">🌟 Influencer Collab</button>
+
+<button type="button" onclick="setPrompt('A creative pitch submission form for advertising campaigns')" class="bg-white hover:bg-slate-200 border border-indigo-300 text-indigo-700 text-xs px-3 py-1.5 rounded-full transition">🎨 Creative Pitch</button>
+
+<button type="button" onclick="setPrompt('A giveaway entry form with email + preferences')" class="bg-white hover:bg-slate-200 border border-yellow-300 text-yellow-800 text-xs px-3 py-1.5 rounded-full transition">🎁 Giveaway Entry</button>
+
+<button type="button" onclick="setPrompt('A landing page contact form for a startup product launch')" class="bg-white hover:bg-slate-200 border border-sky-300 text-sky-700 text-xs px-3 py-1.5 rounded-full transition">🚀 Product Launch</button>
+
+<button type="button" onclick="setPrompt('A pet adoption interest form with personal details and motivation')" class="bg-white hover:bg-slate-200 border border-green-300 text-green-700 text-xs px-3 py-1.5 rounded-full transition">🐶 Pet Adoption</button>
+
+<button type="button" onclick="setPrompt('A wedding RSVP form with meal preferences and song suggestions')" class="bg-white hover:bg-slate-200 border border-rose-300 text-rose-700 text-xs px-3 py-1.5 rounded-full transition">💍 Wedding RSVP</button>
+
+<button type="button" onclick="setPrompt('An internal bug report form for employees in a tech company')" class="bg-white hover:bg-slate-200 border border-red-300 text-red-700 text-xs px-3 py-1.5 rounded-full transition">🐞 Bug Report</button>
+
+                </div>
+            </div>
+
+            <form hx-post="/api/generate"
+                  hx-target="#result-wrapper"
+                  hx-swap="innerHTML"
+                  hx-indicator="#generation-spinner"
+                  class="space-y-4">
+                <textarea name="prompt" required
+                       class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                       placeholder="e.g., A contact form with fields for name, email, and message" rows="3"></textarea>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md w-full flex items-center justify-center transition-all duration-200">
+                    <span class="htmx-indicator" id="generation-spinner">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                    <span>Generate Form!</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Step 2: The Result and Actions -->
+        <div id="result-wrapper" class="space-y-6">
+            <!-- The generated HTML will be loaded here. It will include the result AND the next step actions -->
+        </div>
+
+    </main>
+
+    <!-- Toast container for notifications -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // --- SCRIPT FOR A BETTER UX ---
+
+        function setPrompt(text) {
+            const textarea = document.querySelector('textarea[name="prompt"]');
+            if (textarea) {
+                textarea.value = text;
+                textarea.focus();
+                textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500'
+            };
+            toast.className = `text-white px-4 py-3 rounded-lg shadow-xl fade-in ${colors[type]}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.transition = 'opacity 0.5s ease-out';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            const target = event.detail.target;
+
+            // After the initial form is generated (target is the wrapper)
+            if (target.id === 'result-wrapper') {
+                const resultDiv = document.getElementById('result');
+                if (resultDiv) {
+                    const generatedHtml = resultDiv.innerHTML;
+                    document.querySelectorAll('input[name="html"]').forEach(input => {
+                        input.value = generatedHtml;
+                    });
+                    const resultElement = document.getElementById('step-2-content');
+                    if (resultElement) {
+                        resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            }
+            // After the AI chat modifies the form preview (target is the result div itself)
+            else if (target.id === 'result') {
+                // Check that the swap was successful and didn't contain an error message
+                if (event.detail.successful && !target.querySelector('p.text-red-500')) {
+                    const updatedHtml = target.innerHTML;
+                    // Update the hidden 'html' value for all other forms (Save, Send, next Chat)
+                    // This ensures the next action uses the latest version of the HTML
+                    document.querySelectorAll('input[name="html"]').forEach(input => {
+                        input.value = updatedHtml;
+                    });
+                    showToast('🤖 Preview updated. You can ask for more changes or save.', 'info');
+                }
+            }
+        });
+
+        document.body.addEventListener('htmx:beforeRequest', (e) => {
+            const button = e.detail.elt;
+            if(button.hasAttribute('data-loading-text')){
+                button.disabled = true;
+                button.dataset.originalText = button.innerHTML;
+                button.innerHTML = `<span class="htmx-indicator">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    </span> ${button.getAttribute('data-loading-text')}`;
+            }
+        });
+
+document.body.addEventListener('htmx:afterRequest', (e) => {
+    const button = e.detail.elt;
+
+    // 🔄 שחזור טקסט כפתור אם צריך
+    if (button.hasAttribute('data-loading-text')) {
+        button.disabled = false;
+        button.innerHTML = button.dataset.originalText;
+    }
+
+    const path = e.detail.pathInfo.path;
+
+    if (e.detail.successful) {
+        if (path === '/api/save-form') {
+            showToast('✅ Form saved successfully!');
+        } else if (path === '/api/send-form-to-other-email') {
+            showToast('📬 The form has been sent by email!');
+        }
+    } else {
+        if (path === '/api/send-form-to-other-email') {
+            showToast('❌ Failed to send the form. Please check the email address.', 'error');
+        }
+    }
+});
+
+    </script>
+</body>
+</html>

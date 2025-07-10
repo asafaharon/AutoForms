@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Welcome to AutoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        @keyframes fadeSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-slide {
+            animation: fadeSlideIn 0.7s ease-out forwards;
+        }
+        .action-card {
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+        }
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center px-4">
+<div class="bg-white shadow-2xl rounded-3xl p-8 max-w-2xl w-full text-center space-y-8 animate-fade-slide">
+    <!-- Header -->
+    <div class="space-y-2">
+        <h1 class="text-4xl font-bold text-gray-800 tracking-tight">
+            Hello, <span class="text-blue-600">{{ user.username }}</span>!
+        </h1>
+        <p class="text-lg text-gray-500">What would you like to do today? 🚀</p>
+    </div>
+
+    <!-- Actions Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Create Form -->
+        <a href="/generator" class="action-card bg-blue-500 text-white p-6 rounded-2xl flex flex-col items-center justify-center space-y-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="text-xl font-semibold">Create a New Form</span>
+        </a>
+
+        <!-- My Forms -->
+        <a href="/api/dashboard" class="action-card bg-emerald-500 text-white p-6 rounded-2xl flex flex-col items-center justify-center space-y-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span class="text-xl font-semibold">My Forms</span>
+        </a>
+
+        <!-- Admin Panel (Conditional) -->
+        {% if user.is_admin %}
+        <a href="/admin/dashboard" class="action-card bg-purple-600 text-white p-6 rounded-2xl flex flex-col items-center justify-center space-y-3 md:col-span-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-3-5v5m-3-2v2m-3-7v7m6-13L12 3l-1.414 1.414a2 2 0 00-2.828 0L3 9v11a2 2 0 002 2h14a2 2 0 002-2V9l-4.586-4.586a2 2 0 00-2.828 0z" />
+            </svg>
+            <span class="text-xl font-semibold">Admin Panel</span>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Logout Button -->
+    <div class="pt-4">
+        <a hx-post="/logout" hx-target="body" hx-swap="outerHTML" class="text-gray-500 hover:text-red-600 hover:underline transition duration-200 ease-in-out cursor-pointer font-medium">
+            Logout
+        </a>
+    </div>
+</div>
+</body>
+</html>
