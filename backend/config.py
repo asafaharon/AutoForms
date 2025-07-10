@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     smtp_user: str = Field(..., env="SMTP_USER")
     smtp_password: str = Field(..., env="SMTP_PASSWORD")
     email_from: str = Field(..., env="EMAIL_FROM")
-    base_url: str = Field("http://127.0.0.1:8083", env="BASE_URL")
+    base_url: str = Field("https://autoforms-production.up.railway.app", env="BASE_URL")
 
     class Config:
         env_file = ".env"
