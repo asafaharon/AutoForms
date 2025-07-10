@@ -1,26 +1,26 @@
+import os
 from tempfile import NamedTemporaryFile
-from weasyprint import HTML
+from xhtml2pdf import pisa
 
 def html_to_pdf_file(html: str) -> str:
     """
-    יוצר קובץ PDF זמני מ־HTML באמצעות WeasyPrint.
+    יוצר קובץ PDF זמני מ־HTML באמצעות xhtml2pdf.
     מחזיר את הנתיב לקובץ.
     """
 
-    # עטיפת HTML בסיסית עם תמיכה ב־RTL וגופן בעברית
+    # עטיפת HTML בסיסית עם תמיכה ב־RTL (מוגבלת ב-xhtml2pdf) וגופן עברי
     full_html = f"""
     <!DOCTYPE html>
     <html lang="he" dir="rtl">
     <head>
       <meta charset="utf-8">
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Alef&display=swap');
         @page {{
           size: A4;
           margin: 2cm;
         }}
         body {{
-          font-family: 'Alef', sans-serif;
+          font-family: Helvetica, sans-serif;
           direction: rtl;
           text-align: right;
           line-height: 1.6;
@@ -34,5 +34,7 @@ def html_to_pdf_file(html: str) -> str:
     """
 
     with NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        HTML(string=full_html).write_pdf(tmp.name)
+        result = pisa.CreatePDF(full_html, dest=tmp)
+        if result.err:
+            raise Exception("Failed to generate PDF with xhtml2pdf")
         return tmp.name
