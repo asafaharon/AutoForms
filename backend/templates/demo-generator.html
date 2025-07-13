@@ -30,50 +30,9 @@
     </button>
   </form>
 
-  <!-- Preview + Actions -->
+  <!-- Preview -->
   <div id="preview-wrapper" class="w-full max-w-4xl mt-8 space-y-6 hidden">
-
     <div id="preview-box" class="bg-white border border-slate-200 rounded-lg p-6 min-h-[200px]"></div>
-
-    <!-- Chat with GPT -->
-    <form hx-post="/api/chat-about-html"
-          hx-target="#preview-box"
-          hx-swap="innerHTML"
-          class="space-y-4 border-t border-slate-200 pt-6">
-      <label class="block text-sm font-medium text-gray-700">Improve the form with AI:</label>
-      <input type="hidden" name="html" id="hidden-html-chat" />
-      <input type="text" name="question" required
-             placeholder="e.g., add a phone number field"
-             class="w-full p-2 border border-gray-300 rounded-lg text-sm" />
-      <button type="submit"
-              class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">
-        💬 Ask GPT
-      </button>
-    </form>
-
-    <!-- Send as PDF -->
-    <form hx-post="/api/demo-send-form-pdf"
-          hx-target="#feedback"
-          hx-swap="innerHTML"
-          class="space-y-4 border-t border-slate-200 pt-6">
-      <label class="block text-sm font-medium text-gray-700">Send PDF to email:</label>
-      <input type="hidden" name="html" id="hidden-html-email" />
-      <input type="text" name="title" value="Generated Form" class="hidden">
-      <input type="email" name="email" required placeholder="example@gmail.com"
-             class="w-full p-2 border border-gray-300 rounded-lg text-sm" />
-      <button type="submit"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold">
-        📤 Send PDF
-      </button>
-    </form>
-                <form method="post" action="/api/download-pdf" target="_blank">
-                <input type="hidden" name="html" value="{escaped_html}">
-                <input type="hidden" name="title" value="Generated Form">
-                <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition">
-                    ⬇️ Download PDF
-                </button>
-            </form>
-
     <div id="feedback" class="pt-4 text-center text-sm font-medium text-green-700"></div>
   </div>
 
@@ -81,10 +40,9 @@
     document.body.addEventListener("htmx:afterSwap", function (evt) {
       const preview = document.getElementById("preview-box");
       const wrapper = document.getElementById("preview-wrapper");
+
       if (preview && wrapper) {
-        // Update all hidden html fields
-        document.getElementById("hidden-html-chat").value = preview.innerHTML;
-        document.getElementById("hidden-html-email").value = preview.innerHTML;
+        // אין צורך לעדכן hidden-html-email / download – הם מגיעים מהשרת
         wrapper.classList.remove("hidden");
         wrapper.scrollIntoView({ behavior: "smooth" });
       }
@@ -95,7 +53,7 @@
         setTimeout(() => {
           loader.textContent = "⏳ Working on it... please wait";
           loader.style.display = "none";
-        }, 500);
+        }, 100);
       }
     });
 

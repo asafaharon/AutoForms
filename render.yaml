@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: autoforms
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "sh start.sh"
+    envVars:
+      - key: OPENAI_KEY
+        value: your-openai-key-here
+      - key: MONGODB_URI
+        value: mongodb+srv://your-user:your-pass@cluster.mongodb.net/autoforms
+      - key: BASE_URL
+        value: https://autoforms.onrender.com
+      - key: SMTP_USER
+        value: your@email.com
+      - key: SMTP_PASSWORD
+        value: your-smtp-password
+      - key: EMAIL_FROM
+        value: AutoForms <your@email.com>
