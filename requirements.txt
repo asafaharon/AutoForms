@@ -1,7 +1,7 @@
 fastapi==0.95.2
 uvicorn[standard]==0.22.0
 pydantic==1.10.15
-jinja2
+jinja2==3.1.2
 
 motor>=3.5.1
 python-dotenv==1.0.1
@@ -10,8 +10,12 @@ aiosmtplib==2.0.2
 email-validator>=2.1
 weasyprint>=65.0
 langdetect==1.0.9
-openai>=0.27.0
+openai>=1.0.0
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
+
+# Additional dependencies for production
+gunicorn==21.2.0
+pymongo==4.6.0
 

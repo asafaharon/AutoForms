@@ -50,8 +50,28 @@
         <section id="step-1" class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200/80 space-y-5 fade-in">
             <div class="text-center">
                 <span class="text-sm font-bold uppercase text-blue-600 bg-blue-100 px-3 py-1 rounded-full">Step 1</span>
-                <h2 class="text-2xl font-bold mt-2">What would you like to create?</h2>
+                <h2 class="text-2xl font-bold mt-2">🎯 What would you like to create?</h2>
                 <p class="text-slate-500 mt-1">Describe the form, letter, or questionnaire you need. Be as detailed as possible!</p>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">100+</div>
+                    <div class="text-xs text-slate-500">Form Templates</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">5sec</div>
+                    <div class="text-xs text-slate-500">Generation Time</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600">AI</div>
+                    <div class="text-xs text-slate-500">Powered</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-indigo-600">0</div>
+                    <div class="text-xs text-slate-500">Code Required</div>
+                </div>
             </div>
 
             <!-- Templates -->
@@ -90,15 +110,29 @@
                 <textarea name="prompt" required
                        class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
                        placeholder="e.g., A contact form with fields for name, email, and message" rows="3"></textarea>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md w-full flex items-center justify-center transition-all duration-200">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md w-full flex items-center justify-center transition-all duration-200 group">
                     <span class="htmx-indicator" id="generation-spinner">
                         <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </span>
-                    <span>Generate Form!</span>
+                    <span id="generate-button-text">🚀 Generate Form!</span>
                 </button>
+                
+                <!-- Progress indicator -->
+                <div id="progress-indicator" class="hidden">
+                    <div class="flex items-center justify-center space-x-2 text-sm text-slate-600">
+                        <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="progress-text">Processing your request...</span>
+                    </div>
+                    <div class="mt-2 bg-gray-200 rounded-full h-2">
+                        <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
             </form>
         </section>
 
@@ -142,11 +176,45 @@
             }, 3000);
         }
 
+        document.body.addEventListener('htmx:beforeRequest', (event) => {
+            const target = event.detail.target;
+            
+            // Show progress indicator for form generation
+            if (target.id === 'result-wrapper' && event.detail.verb === 'post') {
+                const progressIndicator = document.getElementById('progress-indicator');
+                const progressText = document.getElementById('progress-text');
+                const progressBar = document.getElementById('progress-bar');
+                
+                if (progressIndicator && progressText && progressBar) {
+                    progressIndicator.classList.remove('hidden');
+                    progressText.textContent = 'Analyzing your request...';
+                    progressBar.style.width = '20%';
+                    
+                    // Simulate progress updates
+                    setTimeout(() => {
+                        progressText.textContent = 'Generating form structure...';
+                        progressBar.style.width = '60%';
+                    }, 1000);
+                    
+                    setTimeout(() => {
+                        progressText.textContent = 'Finalizing your form...';
+                        progressBar.style.width = '90%';
+                    }, 3000);
+                }
+            }
+        });
+
         document.body.addEventListener('htmx:afterSwap', (event) => {
             const target = event.detail.target;
 
             // After the initial form is generated (target is the wrapper)
             if (target.id === 'result-wrapper') {
+                // Hide progress indicator
+                const progressIndicator = document.getElementById('progress-indicator');
+                if (progressIndicator) {
+                    progressIndicator.classList.add('hidden');
+                }
+                
                 const resultDiv = document.getElementById('result');
                 if (resultDiv) {
                     const generatedHtml = resultDiv.innerHTML;
@@ -157,6 +225,7 @@
                     if (resultElement) {
                         resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
+                    showToast('✅ Form generated successfully!', 'success');
                 }
             }
             // After the AI chat modifies the form preview (target is the result div itself)

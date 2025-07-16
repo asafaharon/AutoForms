@@ -35,4 +35,21 @@ def html_to_pdf_file(html: str) -> str:
 
     with NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
         HTML(string=full_html).write_pdf(tmp.name)
-        return tmp.name
+        tmp_path = tmp.name
+
+    # Schedule cleanup after 1 hour
+    import asyncio
+    asyncio.create_task(cleanup_file_after_delay(tmp_path, 3600))
+    
+    return tmp_path
+
+async def cleanup_file_after_delay(file_path: str, delay_seconds: int):
+    """Clean up file after specified delay."""
+    await asyncio.sleep(delay_seconds)
+    try:
+        import os
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"🗑️ Cleaned up temporary file: {file_path}")
+    except Exception as e:
+        print(f"❌ Failed to clean up file {file_path}: {e}")

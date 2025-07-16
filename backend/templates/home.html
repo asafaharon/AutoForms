@@ -7,6 +7,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.2"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
+        body { font-family: 'Inter', sans-serif; }
         @keyframes fadeSlideIn {
             0% {
                 opacity: 0;
@@ -27,7 +28,15 @@
             transform: translateY(-5px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
+        @media (max-width: 768px) {
+            .action-card:hover {
+                transform: none;
+            }
+        }
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center px-4">
 <div class="bg-white shadow-2xl rounded-3xl p-8 max-w-2xl w-full text-center space-y-8 animate-fade-slide">

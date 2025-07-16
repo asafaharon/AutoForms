@@ -1,1 +1,42 @@
-.venv/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.env.local
+.env.production
+
+# AutoForms specific
+*.pdf
+temp/
+logs/
+.railway/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python cache
+*.pyc
+__pycache__/
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite3

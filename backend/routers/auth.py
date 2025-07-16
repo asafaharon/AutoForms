@@ -24,6 +24,8 @@ from backend.services.auth_service import (
     create_access_token,
 )
 from backend.db import get_db
+from backend.config import get_settings
+from backend.utils import validate_email, validate_password, validate_username, ValidationError
 
 print("🔔 auth router loaded")
 
@@ -64,27 +66,57 @@ async def register(
     password: str = Form(...),
     db:       AsyncIOMotorDatabase = Depends(get_db),
 ):
-    # Check for duplicate email
-    if await db.users.find_one({"email": email}):
-        html = """
+    # Input validation
+    if not validate_username(username):
+        return HTMLResponse(content="""
         <div class="bg-red-100 text-red-700 p-3 rounded text-center mb-3">
-         This email is already registered. Please try a different one.
+         Username must be 3-50 characters and contain only letters, numbers, underscore, and hyphen.
         </div>
-        """
-        return HTMLResponse(content=html, status_code=400)
+        """, status_code=400)
+    
+    if not validate_email(str(email)):
+        return HTMLResponse(content="""
+        <div class="bg-red-100 text-red-700 p-3 rounded text-center mb-3">
+         Please provide a valid email address.
+        </div>
+        """, status_code=400)
+    
+    if not validate_password(password):
+        return HTMLResponse(content="""
+        <div class="bg-red-100 text-red-700 p-3 rounded text-center mb-3">
+         Password must be at least 8 characters with uppercase, lowercase, and number.
+        </div>
+        """, status_code=400)
 
-    # Determine if the user is an admin based on email
-    is_admin = (email == "admin@gmail.com")
+    try:
+        # Check for duplicate email
+        if await db.users.find_one({"email": email}):
+            html = """
+            <div class="bg-red-100 text-red-700 p-3 rounded text-center mb-3">
+             This email is already registered. Please try a different one.
+            </div>
+            """
+            return HTMLResponse(content=html, status_code=400)
 
-    # Create user document
-    doc = {
-        "username":        username,
-        "email":           email,
-        "hashed_password": hash_password(password),
-        "created_at":      datetime.utcnow(),
-        "is_admin":        is_admin,  # Set admin status
-    }
-    result = await db.users.insert_one(doc)
+        # Determine if the user is an admin based on configured admin emails
+        settings = get_settings()
+        is_admin = str(email) in settings.admin_emails
+
+        # Create user document
+        doc = {
+            "username":        username,
+            "email":           email,
+            "hashed_password": hash_password(password),
+            "created_at":      datetime.utcnow(),
+            "is_admin":        is_admin,  # Set admin status
+        }
+        result = await db.users.insert_one(doc)
+    except Exception as e:
+        return HTMLResponse(content="""
+        <div class="bg-red-100 text-red-700 p-3 rounded text-center mb-3">
+         Registration failed. Please try again.
+        </div>
+        """, status_code=500)
 
     token = create_access_token(data={"sub": str(result.inserted_id)})
 

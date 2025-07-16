@@ -3,10 +3,10 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 
 from backend.config import get_settings
+
 # קונטקסט להצפנת סיסמאות עם bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = "supersecret"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -20,8 +20,14 @@ def create_access_token(data: dict, expires_minutes: int = 60):
     settings = get_settings()
     to_encode = data.copy()
     to_encode["exp"] = datetime.utcnow() + timedelta(minutes=expires_minutes)
-    return jwt.encode(to_encode, settings.openai_key, algorithm=ALGORITHM)
+    try:
+        return jwt.encode(to_encode, settings.jwt_secret, algorithm=ALGORITHM)
+    except JWTError as e:
+        raise ValueError(f"Failed to create access token: {str(e)}")
 
 def decode_token(token: str):
-    settings = get_settings()                       # ← וגם כאן
-    return jwt.decode(token, settings.openai_key, algorithms=[ALGORITHM])
+    settings = get_settings()
+    try:
+        return jwt.decode(token, settings.jwt_secret, algorithms=[ALGORITHM])
+    except JWTError as e:
+        raise ValueError(f"Failed to decode token: {str(e)}")
