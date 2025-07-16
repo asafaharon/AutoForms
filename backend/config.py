@@ -1,5 +1,4 @@
-from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings
+from pydantic import BaseSettings, Field
 from functools import lru_cache
 from typing import List
 from dotenv import load_dotenv
@@ -26,10 +25,9 @@ class Settings(BaseSettings):
     port: int = Field(8000, env="PORT")
     environment: str = Field("development", env="ENVIRONMENT")
 
-    model_config = {
-        "env_file": ".env",
-        "env_file_encoding": "utf-8"
-    }
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
 @lru_cache()
 def get_settings() -> Settings:

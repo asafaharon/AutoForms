@@ -1,5 +1,5 @@
 from tempfile import NamedTemporaryFile
-from weasyprint import HTML
+# from weasyprint import HTML
 
 def html_to_pdf_file(html: str) -> str:
     """
@@ -33,8 +33,14 @@ def html_to_pdf_file(html: str) -> str:
     </html>
     """
 
-    with NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        HTML(string=full_html).write_pdf(tmp.name)
+    # Temporarily disabled PDF generation to avoid weasyprint build issues
+    # with NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+    #     HTML(string=full_html).write_pdf(tmp.name)
+    #     tmp_path = tmp.name
+    
+    # For now, return a placeholder
+    with NamedTemporaryFile(delete=False, suffix=".txt") as tmp:
+        tmp.write(f"PDF generation temporarily disabled. HTML content: {full_html}".encode())
         tmp_path = tmp.name
 
     # Schedule cleanup after 1 hour
