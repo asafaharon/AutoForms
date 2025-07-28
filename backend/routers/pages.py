@@ -50,19 +50,47 @@ async def share_form_page(
     if user:
         try:
             db = await get_db()
-            user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
-            if user_id:
-                forms_cursor = db.forms.find({"user_id": user_id}).sort("created_at", -1)
-                user_forms = await forms_cursor.to_list(length=50)
+            # Get user ID from UserPublic object
+            user_id_str = user.id  # This is already a string from the UserPublic model
+            
+            # Convert to ObjectId for database query
+            from bson import ObjectId
+            user_obj_id = ObjectId(user_id_str)
+            
+            # Query forms for this user
+            forms_cursor = db.forms.find({"user_id": user_obj_id}).sort("created_at", -1)
+            user_forms = await forms_cursor.to_list(length=50)
+            
+            # Convert MongoDB documents to proper format for template
+            for form in user_forms:
+                if "_id" in form and "id" not in form:
+                    form["id"] = str(form["_id"])
+            
+            # If form_id specified, get that specific form
+            if form_id:
+                try:
+                    form_obj_id = ObjectId(form_id)
+                    selected_form = await db.forms.find_one({"_id": form_obj_id, "user_id": user_obj_id})
+                    if selected_form and "_id" in selected_form:
+                        selected_form["id"] = str(selected_form["_id"])
+                except Exception as e:
+                    print(f"Error finding specific form {form_id}: {e}")
+                    selected_form = None
+            elif user_forms:
+                # Default to most recent form
+                selected_form = user_forms[0]
                 
-                # If form_id specified, get that form
-                if form_id:
-                    selected_form = await db.forms.find_one({"id": form_id, "user_id": user_id})
-                elif user_forms:
-                    # Default to most recent form
-                    selected_form = user_forms[0]
         except Exception as e:
             print(f"Error loading user forms: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    # Debug information
+    print(f"DEBUG: User ID: {user.id if user else 'None'}")
+    print(f"DEBUG: Found {len(user_forms)} forms")
+    if user_forms:
+        print(f"DEBUG: First form: {user_forms[0].get('title', 'No title')} - ID: {user_forms[0].get('id', 'No ID')}")
+    print(f"DEBUG: Selected form: {selected_form.get('title', 'No title') if selected_form else 'None'}")
     
     return templates.TemplateResponse(
         "share_form.html",
