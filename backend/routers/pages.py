@@ -38,11 +38,42 @@ async def submissions_page(
 async def share_form_page(
     request: Request,
     form_id: str = None,
-    preview: bool = False
+    preview: bool = False,
+    user = Depends(get_current_user)
 ):
+    from backend.db import get_db
+    
+    # Get user's forms for selection
+    user_forms = []
+    selected_form = None
+    
+    if user:
+        try:
+            db = await get_db()
+            user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
+            if user_id:
+                forms_cursor = db.forms.find({"user_id": user_id}).sort("created_at", -1)
+                user_forms = await forms_cursor.to_list(length=50)
+                
+                # If form_id specified, get that form
+                if form_id:
+                    selected_form = await db.forms.find_one({"id": form_id, "user_id": user_id})
+                elif user_forms:
+                    # Default to most recent form
+                    selected_form = user_forms[0]
+        except Exception as e:
+            print(f"Error loading user forms: {e}")
+    
     return templates.TemplateResponse(
         "share_form.html",
-        {"request": request, "form_id": form_id, "preview": preview}
+        {
+            "request": request, 
+            "form_id": form_id, 
+            "preview": preview,
+            "user": user,
+            "user_forms": user_forms,
+            "selected_form": selected_form
+        }
     )
 
 @router.get("/dashboard", response_class=HTMLResponse)

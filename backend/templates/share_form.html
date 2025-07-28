@@ -41,10 +41,24 @@
             <p class="text-slate-600">Choose how you want to share your form with others - it's super easy!</p>
         </div>
 
+        <!-- Form Selection -->
+        {% if user_forms %}
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">📝 Select Form to Share</h2>
+            <select id="form-selector" onchange="changeForm()" class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                {% for form in user_forms %}
+                <option value="{{ form.id }}" {% if selected_form and form.id == selected_form.id %}selected{% endif %}>
+                    {{ form.title }} (Created: {{ form.created_at.strftime('%Y-%m-%d') if form.created_at else 'Unknown' }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
         <!-- Form Preview -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-slate-800">📝 Your Form</h2>
+                <h2 class="text-lg font-semibold text-slate-800">📝 Form: {{ selected_form.title if selected_form else 'Demo Form' }}</h2>
                 <span class="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">✅ Live & Working</span>
             </div>
             
@@ -230,14 +244,35 @@
     </div>
 
     <script>
-        // Form data - this would be populated from the backend
+        // Form data from backend
         let formData = {
-            id: 'demo-form-123',
-            title: 'Sample Contact Form',
-            shareLink: window.location.origin + '/embed/demo-form-123',
+            id: '{{ selected_form.id if selected_form else "demo-form-123" }}',
+            title: '{{ selected_form.title if selected_form else "Demo Contact Form" }}',
+            shareLink: window.location.origin + '/embed/{{ selected_form.id if selected_form else "demo-form-123" }}',
             iframeCode: '',
-            htmlCode: ''
+            htmlCode: '{{ selected_form.html if selected_form else "" }}'
         };
+
+        // Store all user forms for form switching
+        let allForms = [
+            {% if user_forms %}
+                {% for form in user_forms %}
+                {
+                    id: '{{ form.id }}',
+                    title: '{{ form.title }}',
+                    html: `{{ form.html | replace('"', '\\"') | replace('\n', '\\n') | replace('\r', '') }}`,
+                    shareLink: window.location.origin + '/embed/{{ form.id }}'
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            {% else %}
+                {
+                    id: 'demo-form-123',
+                    title: 'Demo Contact Form',
+                    html: '',
+                    shareLink: window.location.origin + '/embed/demo-form-123'
+                }
+            {% endif %}
+        ];
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
@@ -360,6 +395,53 @@ Thanks!`);
 
         function openPreview() {
             window.open(formData.shareLink, '_blank');
+        }
+
+        function changeForm() {
+            const selector = document.getElementById('form-selector');
+            const selectedFormId = selector.value;
+            
+            // Find the selected form in allForms array
+            const selectedForm = allForms.find(form => form.id === selectedFormId);
+            
+            if (selectedForm) {
+                // Update formData
+                formData = {
+                    id: selectedForm.id,
+                    title: selectedForm.title,
+                    shareLink: selectedForm.shareLink,
+                    iframeCode: '',
+                    htmlCode: selectedForm.html
+                };
+                
+                // Update page elements
+                document.getElementById('form-id').textContent = formData.id;
+                document.getElementById('share-link').value = formData.shareLink;
+                document.querySelector('h2.text-lg.font-semibold.text-slate-800').textContent = `📝 Form: ${formData.title}`;
+                
+                // Update form preview with actual HTML
+                const previewDiv = document.getElementById('form-preview');
+                if (selectedForm.html && selectedForm.html.trim()) {
+                    // Create a scaled-down preview
+                    previewDiv.innerHTML = `
+                        <div class="transform scale-75 origin-top-left w-full overflow-hidden" style="height: 300px;">
+                            <div class="bg-white p-4 border rounded-lg">
+                                ${selectedForm.html}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    previewDiv.innerHTML = `
+                        <div class="text-center py-8 text-slate-500">
+                            <div class="mb-2">📝</div>
+                            <div>Form preview not available</div>
+                        </div>
+                    `;
+                }
+                
+                // Update embed codes
+                updateEmbedCode();
+            }
         }
 
         function viewSubmissions() {
