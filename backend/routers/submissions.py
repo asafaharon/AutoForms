@@ -6,6 +6,8 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Request, HTTPException, Depends, Form, BackgroundTasks
 from fastapi.responses import HTMLResponse, JSONResponse, Response
+from bson import ObjectId
+from bson.errors import InvalidId
 from backend.db import get_db
 from backend.deps import get_current_user
 from backend.models.form_models import FormSubmission
@@ -76,8 +78,6 @@ async def submit_form(
             )
         
         # Get the form details
-        from bson import ObjectId
-        from bson.errors import InvalidId
         
         form_doc = None
         try:
