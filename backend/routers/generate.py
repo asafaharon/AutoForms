@@ -2,11 +2,14 @@ from datetime import datetime
 from fastapi import APIRouter, Form, Request, Depends
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from bson import ObjectId
-from backend.services.pdf_service import html_to_pdf_file
+from backend.services.pdf_service import html_to_pdf_file, html_to_text_file
 from backend.services.email_service import send_form_pdf
 from backend.services.form_generator import generate_html_only, chat_with_gpt
+from backend.services.websocket_manager import websocket_manager
 from backend.deps import get_current_user, get_db
 from backend.models.user import UserPublic
+from backend.services.performance_monitor import perf_monitor
+from backend.utils import validate_object_id
 
 router = APIRouter(prefix="/api")
 
@@ -16,6 +19,8 @@ def build_form_response_html(generated_html: str, for_demo: bool = False) -> str
     escaped_html = generated_html.replace('"', '&quot;')
 
     save_form_html = ""
+    email_form_html = ""
+    
     if not for_demo:
         save_form_html = f"""
         <!-- Save Form -->
@@ -26,6 +31,27 @@ def build_form_response_html(generated_html: str, for_demo: bool = False) -> str
                 💾 Save to My Forms
             </button>
         </form>
+        """
+        
+        email_form_html = f"""
+        <form hx-post="/api/send-form-to-other-email" hx-target="#send-feedback" hx-swap="innerHTML">
+            <input type="hidden" name="html" value="{escaped_html}">
+            <input type="email" name="email" required placeholder="Enter an email address to send to" class="w-full border border-slate-300 px-3 py-2 rounded-lg mb-2 focus:ring-2 focus:ring-blue-400">
+            <button type="submit" data-loading-text="Sending..." class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                📤 Send to Email
+            </button>
+            <div id="send-feedback" class="text-center text-sm mt-2 font-medium"></div>
+        </form>
+        """
+    else:
+        # For demo users, show a login prompt instead of the email form
+        email_form_html = f"""
+        <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p class="text-blue-800 font-medium mb-2">📧 Want to send forms via email?</p>
+            <a href="/register" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
+                Create Free Account
+            </a>
+        </div>
         """
 
     return f"""
@@ -39,23 +65,24 @@ def build_form_response_html(generated_html: str, for_demo: bool = False) -> str
             <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 text-xs font-semibold text-slate-500">Preview</div>
             <div id="result" class="p-4 bg-white max-h-[50vh] overflow-y-auto">{generated_html}</div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200/80">
+        <!-- Big Share Button -->
+        <div class="pt-4 border-t border-slate-200/80">
+            <a href="/share-form?preview=true" class="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center text-lg shadow-lg hover:shadow-xl">
+                🔗 Share This Form
+                <span class="ml-2 text-sm opacity-90">(Get link, embed code, QR code)</span>
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             {save_form_html}
             <form method="post" action="/api/download-pdf" target="_blank">
                 <input type="hidden" name="html" value="{escaped_html}">
-                <input type="hidden" name="title" value="Generated Form">
+                <input type="hidden" name="title" value="Generated Content">
                 <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition">
                     ⬇️ Download PDF
                 </button>
             </form>
-            <form hx-post="/api/send-form-to-other-email" hx-target="#send-feedback" hx-swap="innerHTML">
-                <input type="hidden" name="html" value="{escaped_html}">
-                <input type="email" name="email" required placeholder="Enter an email address to send to" class="w-full border border-slate-300 px-3 py-2 rounded-lg mb-2 focus:ring-2 focus:ring-blue-400">
-                <button type="submit" data-loading-text="Sending..." class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg transition">
-                    📤 Send to Email
-                </button>
-                <div id="send-feedback" class="text-center text-sm mt-2 font-medium"></div>
-            </form>
+            {email_form_html}
         </div>
         <div class="pt-4 border-t border-slate-200/80">
             <form hx-post="/api/chat-about-html" hx-target="#result" hx-swap="innerHTML" class="space-y-2">
@@ -87,7 +114,10 @@ async def generate_html_preview(
 
 @router.post("/demo-generate", response_class=HTMLResponse)
 async def generate_demo_html(prompt: str = Form(...)):
+    start_time = datetime.now()
     html = await generate_html_only(prompt)
+    total_time = (datetime.now() - start_time).total_seconds()
+    perf_monitor.record_generation_time("demo_total", total_time, cache_hit=False)
     return HTMLResponse(content=build_form_response_html(html, for_demo=True))
 
 
@@ -98,13 +128,23 @@ async def save_form(
     user: UserPublic = Depends(get_current_user),
     db=Depends(get_db)
 ):
+    user_obj_id = validate_object_id(user.id)
     doc = {
-        "user_id": ObjectId(user.id),
+        "user_id": user_obj_id,
         "title": title,
         "html": html,
         "created_at": datetime.utcnow(),
     }
-    await db.forms.insert_one(doc)
+    result = await db.forms.insert_one(doc)
+    form_id = str(result.inserted_id)
+    
+    # Send WebSocket notification
+    await websocket_manager.notify_form_generated(user.id, {
+        "form_id": form_id,
+        "title": title,
+        "created_at": datetime.utcnow().isoformat()
+    })
+    
     return HTMLResponse(status_code=200)
 
 
@@ -120,6 +160,12 @@ async def send_form_pdf_now(
         return HTMLResponse("✅ The form was sent to your email as a PDF.")
     except Exception as e:
         return HTMLResponse(f"❌ Failed to send email: {e}", status_code=500)
+
+
+@router.get("/performance-stats")
+async def get_performance_stats():
+    """Get performance statistics for monitoring"""
+    return JSONResponse(perf_monitor.get_stats())
 
 
 @router.post("/chat-about-html", response_class=HTMLResponse)
@@ -152,6 +198,7 @@ async def send_form_to_other_email(
 @router.post("/download-pdf")
 async def download_pdf(html: str = Form(...), title: str = Form("generated_form")):
     try:
+        # Try PDF first
         pdf_path = html_to_pdf_file(html)
         filename = f"{title.replace(' ', '_')}.pdf"
         return FileResponse(
@@ -160,5 +207,33 @@ async def download_pdf(html: str = Form(...), title: str = Form("generated_form"
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
+    except ImportError as e:
+        # WeasyPrint not available, fallback to text file
+        try:
+            text_path = html_to_text_file(html, title)
+            filename = f"{title.replace(' ', '_')}.txt"
+            return FileResponse(
+                path=text_path,
+                filename=filename,
+                media_type="text/plain; charset=utf-8",
+                headers={"Content-Disposition": f"attachment; filename={filename}"}
+            )
+        except Exception as fallback_error:
+            return HTMLResponse(f"<p class='text-red-500'>❌ Download failed. PDF requires WeasyPrint installation: {e}<br>Text fallback also failed: {fallback_error}</p>", status_code=500)
     except Exception as e:
         return HTMLResponse(f"<p class='text-red-500'>❌ Download failed: {e}</p>", status_code=500)
+
+@router.post("/download-text")
+async def download_text(html: str = Form(...), title: str = Form("generated_content")):
+    """Alternative download endpoint for text files"""
+    try:
+        text_path = html_to_text_file(html, title)
+        filename = f"{title.replace(' ', '_')}.txt"
+        return FileResponse(
+            path=text_path,
+            filename=filename,
+            media_type="text/plain; charset=utf-8",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        return HTMLResponse(f"<p class='text-red-500'>❌ Text download failed: {e}</p>", status_code=500)

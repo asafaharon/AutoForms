@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Share Your Form - AutoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .copy-success { 
+            background: #10b981; 
+            color: white; 
+            transition: all 0.3s; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Navigation -->
+    <nav class="bg-white/80 backdrop-blur-lg border-b border-slate-200 sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+            <h1 class="text-xl font-bold text-blue-600">
+                <a href="/">AutoForms ✨</a>
+            </h1>
+            <div class="flex items-center space-x-4">
+                <a href="/generator" class="text-slate-600 hover:text-blue-600 font-medium">Generator</a>
+                <a href="/submissions" class="text-slate-600 hover:text-blue-600 font-medium">Submissions</a>
+                <span class="text-slate-500">{{ user.username if user else 'Guest' }}</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-4xl">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">🔗 Share Your Form</h1>
+            <p class="text-slate-600">Choose how you want to share your form with others - it's super easy!</p>
+        </div>
+
+        <!-- Form Preview -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-800">📝 Your Form</h2>
+                <span class="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">✅ Live & Working</span>
+            </div>
+            
+            <div class="bg-slate-50 rounded-lg p-4 border-2 border-dashed border-slate-300">
+                <div id="form-preview" class="text-slate-600 text-center py-8">
+                    <div class="animate-pulse">Loading your form preview...</div>
+                </div>
+            </div>
+            
+            <div class="mt-4 text-sm text-slate-500 text-center">
+                <span class="font-medium">Form ID:</span> <code id="form-id" class="bg-slate-100 px-2 py-1 rounded">loading...</code>
+            </div>
+        </div>
+
+        <!-- Sharing Options -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Option 1: Simple Link -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 p-3 rounded-lg mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">📱 Share Link</h3>
+                        <p class="text-sm text-slate-600">Perfect for social media, email, QR codes</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex border border-slate-300 rounded-lg overflow-hidden">
+                        <input type="text" id="share-link" readonly 
+                               class="flex-1 px-3 py-2 bg-slate-50 text-slate-600 text-sm font-mono"
+                               value="Loading...">
+                        <button onclick="copyToClipboard('share-link', this)" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium transition-colors">
+                            📋 Copy
+                        </button>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="shareToEmail()" class="flex-1 bg-slate-600 hover:bg-slate-700 text-white py-2 px-3 rounded text-sm font-medium transition-colors">
+                            📧 Email
+                        </button>
+                        <button onclick="shareToWhatsApp()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded text-sm font-medium transition-colors">
+                            💬 WhatsApp
+                        </button>
+                        <button onclick="generateQR()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 rounded text-sm font-medium transition-colors">
+                            📱 QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option 2: Embed on Website -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-100 p-3 rounded-lg mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">🌐 Embed on Website</h3>
+                        <p class="text-sm text-slate-600">Add to your website, blog, or landing page</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Choose embed type:</label>
+                        <select id="embed-type" onchange="updateEmbedCode()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="iframe">Simple Iframe (Recommended)</option>
+                            <option value="html">Full HTML Code (Advanced)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="relative">
+                        <textarea id="embed-code" readonly rows="4" 
+                                  class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono bg-slate-50 text-slate-600"
+                                  placeholder="Loading embed code..."></textarea>
+                        <button onclick="copyToClipboard('embed-code', this)" 
+                                class="absolute top-2 right-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
+                            📋 Copy
+                        </button>
+                    </div>
+                    
+                    <div class="text-xs text-slate-500">
+                        💡 <strong>Tip:</strong> Paste this code into your website's HTML to embed the form directly.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border border-blue-200">
+            <h3 class="font-semibold text-slate-800 mb-4">⚡ Quick Actions</h3>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button onclick="openPreview()" class="bg-white hover:bg-blue-50 text-slate-700 py-3 px-4 rounded-lg border border-slate-200 text-sm font-medium transition-colors text-center">
+                    👁️ Preview Form
+                </button>
+                <button onclick="viewSubmissions()" class="bg-white hover:bg-green-50 text-slate-700 py-3 px-4 rounded-lg border border-slate-200 text-sm font-medium transition-colors text-center">
+                    📊 View Submissions
+                </button>
+                <button onclick="testForm()" class="bg-white hover:bg-yellow-50 text-slate-700 py-3 px-4 rounded-lg border border-slate-200 text-sm font-medium transition-colors text-center">
+                    🧪 Test Form
+                </button>
+                <button onclick="editForm()" class="bg-white hover:bg-purple-50 text-slate-700 py-3 px-4 rounded-lg border border-slate-200 text-sm font-medium transition-colors text-center">
+                    ✏️ Edit Form
+                </button>
+            </div>
+        </div>
+
+        <!-- Step-by-Step Guide -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 class="font-semibold text-slate-800 mb-4">📚 How to Share (Step by Step)</h3>
+            
+            <div class="space-y-4">
+                <div class="flex items-start">
+                    <div class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-4 mt-1">1</div>
+                    <div>
+                        <h4 class="font-medium text-slate-800">Choose sharing method above</h4>
+                        <p class="text-sm text-slate-600">Pick "Share Link" for social media/email, or "Embed" for websites</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="bg-green-100 text-green-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-4 mt-1">2</div>
+                    <div>
+                        <h4 class="font-medium text-slate-800">Click "Copy" button</h4>
+                        <p class="text-sm text-slate-600">The link or code will be copied to your clipboard automatically</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="bg-purple-100 text-purple-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-4 mt-1">3</div>
+                    <div>
+                        <h4 class="font-medium text-slate-800">Paste and share!</h4>
+                        <p class="text-sm text-slate-600">Paste in your email, social media, website, or anywhere you want to collect responses</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <div class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="text-green-800 font-medium">Your form is live and ready to collect responses!</span>
+                </div>
+                <p class="text-green-700 text-sm mt-1">All submissions will appear in your <a href="/submissions" class="underline">Submissions Dashboard</a> and you'll get email notifications.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qr-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-slate-800">📱 QR Code for Your Form</h3>
+                <button onclick="closeQRModal()" class="text-slate-400 hover:text-slate-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="text-center">
+                <div id="qr-code" class="flex items-center justify-center h-64 bg-slate-100 rounded-lg mb-4">
+                    <div class="text-slate-500">Generating QR code...</div>
+                </div>
+                
+                <p class="text-sm text-slate-600 mb-4">Print this QR code on flyers, business cards, or posters. People can scan it to access your form instantly!</p>
+                
+                <button onclick="downloadQR()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    📥 Download QR Code
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Form data - this would be populated from the backend
+        let formData = {
+            id: 'demo-form-123',
+            title: 'Sample Contact Form',
+            shareLink: window.location.origin + '/embed/demo-form-123',
+            iframeCode: '',
+            htmlCode: ''
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeFormData();
+            updateEmbedCode();
+        });
+
+        function initializeFormData() {
+            // In real implementation, this data would come from the backend
+            document.getElementById('form-id').textContent = formData.id;
+            document.getElementById('share-link').value = formData.shareLink;
+            
+            // Simple form preview
+            document.getElementById('form-preview').innerHTML = `
+                <div class="text-left max-w-md mx-auto">
+                    <h3 class="font-semibold text-slate-800 mb-3">${formData.title}</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between py-1 border-b border-slate-200">
+                            <span class="text-slate-600">📝 Name field</span>
+                            <span class="text-slate-400">Required</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-slate-200">
+                            <span class="text-slate-600">📧 Email field</span>
+                            <span class="text-slate-400">Required</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-slate-200">
+                            <span class="text-slate-600">💬 Message field</span>
+                            <span class="text-slate-400">Optional</span>
+                        </div>
+                        <div class="pt-2">
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Submit Button</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateEmbedCode() {
+            const embedType = document.getElementById('embed-type').value;
+            const embedCodeTextarea = document.getElementById('embed-code');
+            
+            if (embedType === 'iframe') {
+                embedCodeTextarea.value = `<iframe 
+    src="${formData.shareLink}" 
+    width="100%" 
+    height="500" 
+    frameborder="0" 
+    style="border: 1px solid #e2e8f0; border-radius: 8px;">
+</iframe>`;
+            } else {
+                embedCodeTextarea.value = `<!-- Paste this HTML code on your website -->
+<div style="max-width: 500px; margin: 0 auto;">
+    <!-- Your form will appear here -->
+    <iframe src="${formData.shareLink}" width="100%" height="500" frameborder="0"></iframe>
+</div>`;
+            }
+        }
+
+        function copyToClipboard(elementId, button) {
+            const element = document.getElementById(elementId);
+            element.select();
+            element.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            
+            const originalText = button.textContent;
+            button.textContent = '✅ Copied!';
+            button.classList.add('copy-success');
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('copy-success');
+            }, 2000);
+        }
+
+        function shareToEmail() {
+            const subject = encodeURIComponent(`Please fill out this form: ${formData.title}`);
+            const body = encodeURIComponent(`Hi!
+
+Please take a moment to fill out this form:
+${formData.shareLink}
+
+It only takes a few minutes.
+
+Thanks!`);
+            
+            window.open(`mailto:?subject=${subject}&body=${body}`);
+        }
+
+        function shareToWhatsApp() {
+            const text = encodeURIComponent(`📝 ${formData.title}
+
+Please fill out this quick form:
+${formData.shareLink}
+
+Thanks!`);
+            
+            window.open(`https://wa.me/?text=${text}`);
+        }
+
+        function generateQR() {
+            document.getElementById('qr-modal').classList.remove('hidden');
+            document.getElementById('qr-modal').classList.add('flex');
+            
+            // Generate QR code using a free service
+            const qrCodeDiv = document.getElementById('qr-code');
+            qrCodeDiv.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(formData.shareLink)}" alt="QR Code" class="mx-auto">`;
+        }
+
+        function closeQRModal() {
+            document.getElementById('qr-modal').classList.add('hidden');
+            document.getElementById('qr-modal').classList.remove('flex');
+        }
+
+        function downloadQR() {
+            const link = document.createElement('a');
+            link.download = `form-qr-code-${formData.id}.png`;
+            link.href = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(formData.shareLink)}`;
+            link.click();
+        }
+
+        function openPreview() {
+            window.open(formData.shareLink, '_blank');
+        }
+
+        function viewSubmissions() {
+            window.open('/submissions', '_blank');
+        }
+
+        function testForm() {
+            if (confirm('This will open your form in a new tab so you can test it by submitting sample data. Continue?')) {
+                window.open(formData.shareLink, '_blank');
+            }
+        }
+
+        function editForm() {
+            alert('Edit functionality would redirect to form editor (not implemented in demo)');
+        }
+    </script>
+
+</body>
+</html>

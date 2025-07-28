@@ -5,6 +5,7 @@ from starlette.responses import HTMLResponse, PlainTextResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 import os
 from tempfile import NamedTemporaryFile
+import atexit
 
 from backend.config import get_settings, Settings
 from backend.db import get_db
@@ -12,14 +13,32 @@ from backend.deps import get_current_user
 from backend.models.user import UserPublic
 from backend.services.email_service import send_form_link, send_form_pdf
 from backend.services.pdf_service import html_to_pdf_file
+from backend.utils import validate_object_id
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 router = APIRouter(prefix="/api", tags=["forms"])
 
+# Track temporary files for cleanup
+_temp_files = []
+
+def cleanup_temp_files():
+    """Clean up temporary files at application shutdown."""
+    for file_path in _temp_files:
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception:
+            pass  # Ignore cleanup errors
+    _temp_files.clear()
+
+# Register cleanup function
+atexit.register(cleanup_temp_files)
+
 @router.get("/forms")
 async def list_forms(user: UserPublic = Depends(get_current_user), db: AsyncIOMotorDatabase = Depends(get_db)):
-    cursor = db.forms.find({"user_id": ObjectId(user.id)}, {"html": 0, "schema": 0})
+    user_obj_id = validate_object_id(user.id)
+    cursor = db.forms.find({"user_id": user_obj_id}, {"html": 0, "schema": 0})
     forms = await cursor.to_list(length=None)
     for f in forms: f["id"] = str(f.pop("_id"))
     return forms
@@ -32,8 +51,10 @@ async def email_form(
     db: AsyncIOMotorDatabase = Depends(get_db),
     settings: Settings = Depends(get_settings)
 ):
+    fid_obj = validate_object_id(fid)
+    user_obj_id = validate_object_id(user.id)
     doc = await db.forms.find_one(
-        {"_id": ObjectId(fid), "user_id": ObjectId(user.id)},
+        {"_id": fid_obj, "user_id": user_obj_id},
         {"title": 1},
     )
     if not doc:
@@ -45,7 +66,8 @@ async def email_form(
 
 @router.get("/forms/public/{fid}", response_class=HTMLResponse)
 async def get_form_public(fid: str, db: AsyncIOMotorDatabase = Depends(get_db)):
-    doc = await db.forms.find_one({"_id": ObjectId(fid)}, {"html": 1})
+    fid_obj = validate_object_id(fid)
+    doc = await db.forms.find_one({"_id": fid_obj}, {"html": 1})
     if not doc:
         raise HTTPException(404, "Form not found")
     return HTMLResponse(doc["html"])
@@ -57,7 +79,9 @@ async def view_form(
     user: UserPublic = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    doc = await db.forms.find_one({"_id": ObjectId(fid), "user_id": ObjectId(user.id)})
+    fid_obj = validate_object_id(fid)
+    user_obj_id = validate_object_id(user.id)
+    doc = await db.forms.find_one({"_id": fid_obj, "user_id": user_obj_id})
     if not doc:
         raise HTTPException(404)
     doc["_id"] = str(doc["_id"])
@@ -69,7 +93,8 @@ async def dashboard(
     user: UserPublic = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    cursor = db.forms.find({"user_id": ObjectId(user.id)}, {"title": 1, "created_at": 1})
+    user_obj_id = validate_object_id(user.id)
+    cursor = db.forms.find({"user_id": user_obj_id}, {"title": 1, "created_at": 1})
     forms = await cursor.to_list(100)
     for f in forms:
         f["_id"] = str(f["_id"])
@@ -81,8 +106,10 @@ async def download_form(
     user: UserPublic = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
+    fid_obj = validate_object_id(fid)
+    user_obj_id = validate_object_id(user.id)
     doc = await db.forms.find_one(
-        {"_id": ObjectId(fid), "user_id": ObjectId(user.id)},
+        {"_id": fid_obj, "user_id": user_obj_id},
         {"html": 1, "title": 1}
     )
     if not doc:
@@ -90,12 +117,16 @@ async def download_form(
     with NamedTemporaryFile(delete=False, suffix=".html", mode="w", encoding="utf-8") as tmp:
         tmp.write(doc["html"])
         tmp.flush()
+        # Track file for cleanup
+        _temp_files.append(tmp.name)
         filename = f"{doc['title'].replace(' ', '_')}.html"
         return FileResponse(tmp.name, filename=filename, media_type="text/html")
 
 @router.delete("/forms/{fid}", response_class=PlainTextResponse)
 async def delete_form(fid: str, user: UserPublic = Depends(get_current_user), db: AsyncIOMotorDatabase = Depends(get_db)):
-    res = await db.forms.delete_one({"_id": ObjectId(fid), "user_id": ObjectId(user.id)})
+    fid_obj = validate_object_id(fid)
+    user_obj_id = validate_object_id(user.id)
+    res = await db.forms.delete_one({"_id": fid_obj, "user_id": user_obj_id})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Form not found")
     return "✅ Successfully deleted"
@@ -107,7 +138,9 @@ async def email_form_pdf(
     user: UserPublic = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    doc = await db.forms.find_one({"_id": ObjectId(fid), "user_id": ObjectId(user.id)})
+    fid_obj = validate_object_id(fid)
+    user_obj_id = validate_object_id(user.id)
+    doc = await db.forms.find_one({"_id": fid_obj, "user_id": user_obj_id})
     if not doc:
         raise HTTPException(404, "Form not found")
 
@@ -128,7 +161,9 @@ async def chat_with_form(
     user: UserPublic = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    doc = await db.forms.find_one({"_id": ObjectId(fid), "user_id": ObjectId(user.id)})
+    fid_obj = validate_object_id(fid)
+    user_obj_id = validate_object_id(user.id)
+    doc = await db.forms.find_one({"_id": fid_obj, "user_id": user_obj_id})
     if not doc:
         return HTMLResponse("Form not found", status_code=404)
 
@@ -137,7 +172,7 @@ async def chat_with_form(
     reply = await chat_with_gpt(html, question)
 
     await db.forms.update_one(
-        {"_id": ObjectId(fid), "user_id": ObjectId(user.id)},
+        {"_id": fid_obj, "user_id": user_obj_id},
         {"$set": {"html": reply}}
     )
     return HTMLResponse("<p class='text-green-700'>Form updated via GPT ✅</p>" + reply)
@@ -149,8 +184,10 @@ async def update_form_html(
     user: UserPublic = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
+    fid_obj = validate_object_id(fid)
+    user_obj_id = validate_object_id(user.id)
     result = await db.forms.update_one(
-        {"_id": ObjectId(fid), "user_id": ObjectId(user.id)},
+        {"_id": fid_obj, "user_id": user_obj_id},
         {"$set": {"html": html}}
     )
     if result.modified_count == 1:

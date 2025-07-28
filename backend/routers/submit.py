@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from backend.db import get_db
+from backend.utils import validate_object_id
 
 submit_router = APIRouter(tags=["submit"])
 
@@ -27,8 +28,9 @@ async def submit_form(
     form_data = await request.form()
 
 
+    form_obj_id = validate_object_id(form_id)
     await db.submissions.insert_one({
-        "form_id": ObjectId(form_id),
+        "form_id": form_obj_id,
         "data": dict(form_data),
         "submitted_at": datetime.utcnow(),
     })

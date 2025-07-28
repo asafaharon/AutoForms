@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Demo: Working Form with Submissions - AutoForms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">📝 Demo: Working Form Submissions</h1>
+            <p class="text-slate-600">This demonstrates how AutoForms now creates working forms that actually collect data!</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Left: Before (Static HTML) -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h2 class="text-xl font-semibold text-red-600 mb-4">❌ Before: Static HTML (Doesn't Work)</h2>
+                
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <p class="text-red-700 text-sm">This is what users got before - beautiful forms that don't actually work:</p>
+                </div>
+                
+                <!-- Example of old static form -->
+                <form class="space-y-4 opacity-60">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                        <input type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="John Doe" disabled>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                        <input type="email" class="w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="john@example.com" disabled>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Message</label>
+                        <textarea class="w-full border border-slate-300 rounded-lg px-3 py-2 h-20" placeholder="Your message..." disabled></textarea>
+                    </div>
+                    <button type="button" class="w-full bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg cursor-not-allowed">
+                        Submit (Goes Nowhere!) 😞
+                    </button>
+                </form>
+                
+                <div class="mt-4 p-3 bg-gray-100 rounded text-sm text-gray-600">
+                    <strong>Issues:</strong>
+                    <ul class="list-disc list-inside mt-1">
+                        <li>No action URL</li>
+                        <li>No backend to process data</li>
+                        <li>No way to view submissions</li>
+                        <li>Just a pretty HTML file!</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right: After (Working Form) -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h2 class="text-xl font-semibold text-green-600 mb-4">✅ After: Working Form (Actually Collects Data!)</h2>
+                
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                    <p class="text-green-700 text-sm">This is what users get now - forms that actually work and collect data:</p>
+                </div>
+                
+                <!-- Example of new working form -->
+                <form id="demo-form" action="/api/submissions/submit/demo-form-123" method="POST" class="space-y-4">
+                    <input type="hidden" name="form_id" value="demo-form-123">
+                    <input type="hidden" name="csrf_token" value="demo-token">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                        <input type="text" name="name" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="John Doe" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                        <input type="email" name="email" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="john@example.com" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Message</label>
+                        <textarea name="message" class="w-full border border-slate-300 rounded-lg px-3 py-2 h-20 focus:ring-2 focus:ring-blue-500" placeholder="Your message..." required></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                        Submit (Actually Works!) 🚀
+                    </button>
+                </form>
+                
+                <div class="mt-4 p-3 bg-green-100 rounded text-sm text-green-700">
+                    <strong>Features:</strong>
+                    <ul class="list-disc list-inside mt-1">
+                        <li>Real submission endpoint</li>
+                        <li>Data stored in database</li>
+                        <li>Email notifications sent</li>
+                        <li>Dashboard to view submissions</li>
+                        <li>Export to CSV/JSON</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Area -->
+        <div id="result-area" class="mt-8 hidden">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-blue-800 mb-2">✅ Form Submitted Successfully!</h3>
+                <p class="text-blue-700">Your demo submission has been processed. In a real form:</p>
+                <ul class="list-disc list-inside mt-2 text-blue-700">
+                    <li>Data would be stored in the database</li>
+                    <li>Form owner would receive email notification</li>
+                    <li>Submission would appear in the dashboard</li>
+                    <li>Data could be exported as CSV/JSON</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="mt-8 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-xl font-semibold text-slate-800 mb-4">🔧 How AutoForms Creates Working Forms</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span class="text-2xl">1️⃣</span>
+                    </div>
+                    <h3 class="font-semibold mb-2">Generate Form</h3>
+                    <p class="text-sm text-slate-600">AI creates beautiful form HTML based on your description</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span class="text-2xl">2️⃣</span>
+                    </div>
+                    <h3 class="font-semibold mb-2">Inject Backend</h3>
+                    <p class="text-sm text-slate-600">AutoForms automatically adds submission URLs and JavaScript handling</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span class="text-2xl">3️⃣</span>
+                    </div>
+                    <h3 class="font-semibold mb-2">Collect Data</h3>
+                    <p class="text-sm text-slate-600">Forms submit to secure backend, store data, send notifications</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Examples -->
+        <div class="mt-8 bg-slate-900 rounded-xl p-6 text-white">
+            <h2 class="text-xl font-semibold mb-4">💻 API Examples</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <h3 class="text-green-400 font-mono text-sm mb-2">GET /api/templates/contact_basic/use-with-submissions</h3>
+                    <pre class="bg-slate-800 p-3 rounded text-xs overflow-x-auto"><code>{
+  "form_id": "abc123",
+  "html": "&lt;form action='/api/submissions/submit/abc123' method='POST'&gt;...",
+  "submission_url": "http://localhost:8009/api/submissions/submit/abc123",
+  "embed_code": "&lt;!-- Ready-to-embed code --&gt;",
+  "iframe_code": "&lt;iframe src='/embed/abc123'&gt;..."
+}</code></pre>
+                </div>
+                
+                <div>
+                    <h3 class="text-blue-400 font-mono text-sm mb-2">POST /api/submissions/submit/{form_id}</h3>
+                    <pre class="bg-slate-800 p-3 rounded text-xs overflow-x-auto"><code>curl -X POST "http://localhost:8009/api/submissions/submit/abc123" \
+  -d "name=John+Doe&email=john@example.com&message=Hello"</code></pre>
+                </div>
+                
+                <div>
+                    <h3 class="text-yellow-400 font-mono text-sm mb-2">GET /submissions (Dashboard)</h3>
+                    <p class="text-slate-300 text-sm">View all form submissions with filtering, export, and management tools</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="mt-8 text-center">
+            <a href="/generator" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg inline-block transition-colors mr-4">
+                🚀 Try Form Generator
+            </a>
+            <a href="/submissions" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg inline-block transition-colors">
+                📊 View Submissions Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+    // Demo form submission handling
+    document.getElementById('demo-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const submitButton = this.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+        
+        // Show loading state
+        submitButton.textContent = 'Submitting...';
+        submitButton.disabled = true;
+        
+        // Simulate form submission
+        setTimeout(() => {
+            // Show success message
+            document.getElementById('result-area').classList.remove('hidden');
+            
+            // Reset form
+            this.reset();
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
+            
+            // Scroll to result
+            document.getElementById('result-area').scrollIntoView({ behavior: 'smooth' });
+        }, 1500);
+    });
+    </script>
+
+</body>
+</html>

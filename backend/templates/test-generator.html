@@ -57,8 +57,8 @@
             <!-- Quick Stats -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-blue-600">100+</div>
-                    <div class="text-xs text-slate-500">Form Templates</div>
+                    <div class="text-2xl font-bold text-blue-600">6+</div>
+                    <div class="text-xs text-slate-500">Professional Templates</div>
                 </div>
                 <div class="text-center">
                     <div class="text-2xl font-bold text-green-600">5sec</div>
@@ -74,31 +74,52 @@
                 </div>
             </div>
 
-            <!-- Templates -->
+            <!-- Template Tabs -->
             <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <h3 class="font-semibold text-slate-600 mb-3 text-center text-sm">Or, choose a ready-made template:</h3>
-                <div class="flex flex-wrap gap-2 justify-center">
-<!-- טפסים קלאסיים -->
-<button type="button" onclick="setPrompt('A registration form for a children\'s enrichment class')" class="bg-white hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-1.5 rounded-full transition">📄 Class Registration</button>
-<button type="button" onclick="setPrompt('A feedback survey for students at the end of a course')" class="bg-white hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-1.5 rounded-full transition">📝 Feedback Survey</button>
-<button type="button" onclick="setPrompt('A letter of recommendation for a candidate for a development position')" class="bg-white hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-1.5 rounded-full transition">🧾 Recommendation Letter</button>
-<button type="button" onclick="setPrompt('A vacation request form for work')" class="bg-white hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-1.5 rounded-full transition">🏖️ Vacation Request</button>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                    <h3 class="font-semibold text-slate-600 text-sm">Choose a ready-made template:</h3>
+                    <button onclick="toggleTemplates()" class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-medium px-4 py-2 rounded-lg transition-all duration-200 touch-manipulation min-h-[40px] flex items-center justify-center">
+                        <span id="template-toggle-text">📋 Show All Templates</span>
+                    </button>
+                </div>
 
-<!-- תוספות מקוריות לשדרוג הרושם 👇 -->
-<button type="button" onclick="setPrompt('An influencer collaboration request form for social media campaigns')" class="bg-white hover:bg-slate-200 border border-pink-300 text-pink-700 text-xs px-3 py-1.5 rounded-full transition">🌟 Influencer Collab</button>
+                <!-- Template Categories -->
+                <div id="template-categories" class="hidden mb-4">
+                    <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
+                        <button onclick="filterTemplates('all')" class="template-filter-btn active bg-blue-600 text-white text-xs px-3 py-2 rounded-lg transition-all duration-200 touch-manipulation min-h-[40px] flex items-center justify-center">All</button>
+                        <button onclick="filterTemplates('contact')" class="template-filter-btn bg-white hover:bg-blue-50 active:bg-blue-100 border border-slate-300 text-slate-700 text-xs px-3 py-2 rounded-lg transition-all duration-200 touch-manipulation min-h-[40px] flex items-center justify-center">Contact</button>
+                        <button onclick="filterTemplates('event')" class="template-filter-btn bg-white hover:bg-blue-50 active:bg-blue-100 border border-slate-300 text-slate-700 text-xs px-3 py-2 rounded-lg transition-all duration-200 touch-manipulation min-h-[40px] flex items-center justify-center">Events</button>
+                        <button onclick="filterTemplates('survey')" class="template-filter-btn bg-white hover:bg-blue-50 active:bg-blue-100 border border-slate-300 text-slate-700 text-xs px-3 py-2 rounded-lg transition-all duration-200 touch-manipulation min-h-[40px] flex items-center justify-center">Surveys</button>
+                        <button onclick="filterTemplates('lead_generation')" class="template-filter-btn bg-white hover:bg-blue-50 active:bg-blue-100 border border-slate-300 text-slate-700 text-xs px-3 py-2 rounded-lg transition-all duration-200 touch-manipulation min-h-[40px] flex items-center justify-center">Marketing</button>
+                        <button onclick="filterTemplates('application')" class="template-filter-btn bg-white hover:bg-blue-50 active:bg-blue-100 border border-slate-300 text-slate-700 text-xs px-3 py-2 rounded-lg transition-all duration-200 touch-manipulation min-h-[40px] flex items-center justify-center">Applications</button>
+                    </div>
+                </div>
 
-<button type="button" onclick="setPrompt('A creative pitch submission form for advertising campaigns')" class="bg-white hover:bg-slate-200 border border-indigo-300 text-indigo-700 text-xs px-3 py-1.5 rounded-full transition">🎨 Creative Pitch</button>
+                <!-- Quick Templates (shown by default) -->
+                <div id="quick-templates" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button type="button" onclick="setPrompt('A registration form for a children\'s enrichment class')" 
+                            class="bg-white hover:bg-slate-100 active:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation min-h-[48px] flex items-center justify-center text-center">
+                        📄 Class Registration
+                    </button>
+                    <button type="button" onclick="setPrompt('A feedback survey for students at the end of a course')" 
+                            class="bg-white hover:bg-slate-100 active:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation min-h-[48px] flex items-center justify-center text-center">
+                        📝 Feedback Survey
+                    </button>
+                    <button type="button" onclick="setPrompt('A business inquiry form with company details')" 
+                            class="bg-white hover:bg-slate-100 active:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation min-h-[48px] flex items-center justify-center text-center">
+                        🏢 Business Contact
+                    </button>
+                    <button type="button" onclick="setPrompt('A newsletter signup form with preferences')" 
+                            class="bg-white hover:bg-slate-100 active:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-3 py-3 rounded-lg transition-all duration-200 touch-manipulation min-h-[48px] flex items-center justify-center text-center">
+                        📧 Newsletter
+                    </button>
+                </div>
 
-<button type="button" onclick="setPrompt('A giveaway entry form with email + preferences')" class="bg-white hover:bg-slate-200 border border-yellow-300 text-yellow-800 text-xs px-3 py-1.5 rounded-full transition">🎁 Giveaway Entry</button>
-
-<button type="button" onclick="setPrompt('A landing page contact form for a startup product launch')" class="bg-white hover:bg-slate-200 border border-sky-300 text-sky-700 text-xs px-3 py-1.5 rounded-full transition">🚀 Product Launch</button>
-
-<button type="button" onclick="setPrompt('A pet adoption interest form with personal details and motivation')" class="bg-white hover:bg-slate-200 border border-green-300 text-green-700 text-xs px-3 py-1.5 rounded-full transition">🐶 Pet Adoption</button>
-
-<button type="button" onclick="setPrompt('A wedding RSVP form with meal preferences and song suggestions')" class="bg-white hover:bg-slate-200 border border-rose-300 text-rose-700 text-xs px-3 py-1.5 rounded-full transition">💍 Wedding RSVP</button>
-
-<button type="button" onclick="setPrompt('An internal bug report form for employees in a tech company')" class="bg-white hover:bg-slate-200 border border-red-300 text-red-700 text-xs px-3 py-1.5 rounded-full transition">🐞 Bug Report</button>
-
+                <!-- Professional Templates Gallery (hidden by default) -->
+                <div id="template-gallery" class="hidden space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="templates-container">
+                        <!-- Templates will be loaded here via JavaScript -->
+                    </div>
                 </div>
             </div>
 
@@ -110,9 +131,9 @@
                 <textarea name="prompt" required
                        class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
                        placeholder="e.g., A contact form with fields for name, email, and message" rows="3"></textarea>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md w-full flex items-center justify-center transition-all duration-200 group">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-4 px-6 rounded-lg shadow-md w-full flex items-center justify-center transition-all duration-200 group touch-manipulation min-h-[56px]">
                     <span class="htmx-indicator" id="generation-spinner">
-                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
@@ -277,6 +298,131 @@ document.body.addEventListener('htmx:afterRequest', (e) => {
         }
     }
 });
+
+        // Template Management Functions
+        let allTemplates = [];
+        let currentCategory = 'all';
+
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/templates/');
+                allTemplates = await response.json();
+                displayTemplates(allTemplates);
+            } catch (error) {
+                console.error('Failed to load templates:', error);
+                showToast('Failed to load templates', 'error');
+            }
+        }
+
+        function displayTemplates(templates) {
+            const container = document.getElementById('templates-container');
+            if (!container) return;
+
+            container.innerHTML = templates.map(template => {
+                const categoryEmoji = {
+                    'contact': '📞',
+                    'event': '🎉',
+                    'survey': '📊',
+                    'lead_generation': '📧',
+                    'application': '📝'
+                };
+
+                return `
+                    <div class="template-card bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer" 
+                         data-category="${template.category}"
+                         onclick="useTemplate('${template.id}')">
+                        <div class="flex items-start justify-between mb-2">
+                            <span class="text-lg">${categoryEmoji[template.category] || '📄'}</span>
+                            <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">${template.category.replace('_', ' ')}</span>
+                        </div>
+                        <h4 class="font-semibold text-slate-800 text-sm mb-1">${template.name}</h4>
+                        <p class="text-xs text-slate-600 mb-3">${template.description}</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-wrap gap-1">
+                                ${template.tags.slice(0, 2).map(tag => 
+                                    `<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">${tag}</span>`
+                                ).join('')}
+                            </div>
+                            <button class="text-xs text-blue-600 hover:text-blue-800 font-medium">Use Template</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterTemplates(category) {
+            currentCategory = category;
+            
+            // Update filter button styles
+            document.querySelectorAll('.template-filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-600', 'text-white');
+                btn.classList.add('bg-white', 'hover:bg-blue-50', 'border', 'border-slate-300', 'text-slate-700');
+            });
+            
+            event.target.classList.add('active', 'bg-blue-600', 'text-white');
+            event.target.classList.remove('bg-white', 'hover:bg-blue-50', 'border', 'border-slate-300', 'text-slate-700');
+
+            // Filter and display templates
+            const filteredTemplates = category === 'all' 
+                ? allTemplates 
+                : allTemplates.filter(t => t.category === category);
+            
+            displayTemplates(filteredTemplates);
+        }
+
+        function toggleTemplates() {
+            const gallery = document.getElementById('template-gallery');
+            const categories = document.getElementById('template-categories');
+            const quickTemplates = document.getElementById('quick-templates');
+            const toggleText = document.getElementById('template-toggle-text');
+            
+            if (gallery.classList.contains('hidden')) {
+                // Show full template gallery
+                gallery.classList.remove('hidden');
+                categories.classList.remove('hidden');
+                quickTemplates.classList.add('hidden');
+                toggleText.textContent = '⚡ Show Quick Templates';
+                
+                // Load templates if not already loaded
+                if (allTemplates.length === 0) {
+                    loadTemplates();
+                }
+            } else {
+                // Show quick templates
+                gallery.classList.add('hidden');
+                categories.classList.add('hidden');
+                quickTemplates.classList.remove('hidden');
+                toggleText.textContent = '📋 Show All Templates';
+            }
+        }
+
+        async function useTemplate(templateId) {
+            try {
+                showToast('Loading template...', 'info');
+                
+                const response = await fetch(`/api/templates/${templateId}/use`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const html = await response.text();
+                    document.getElementById('result-wrapper').innerHTML = html;
+                    
+                    // Scroll to result
+                    const resultElement = document.getElementById('step-2-content');
+                    if (resultElement) {
+                        resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                    
+                    showToast('✅ Template loaded successfully!', 'success');
+                } else {
+                    throw new Error('Failed to load template');
+                }
+            } catch (error) {
+                console.error('Failed to use template:', error);
+                showToast('Failed to load template', 'error');
+            }
+        }
 
     </script>
 </body>

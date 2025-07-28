@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import EmailStr
+# Removed pydantic dependency - using str for email
 from backend.db import get_db
 from backend.services.auth_service import create_access_token, decode_token, hash_password
 from backend.services.email_service import send_reset_email
@@ -18,7 +18,7 @@ async def forgot_password_page(request: Request):
     return templates.TemplateResponse("forgot_password.html", {"request": request})
 
 @router.post("/forgot-password")
-async def forgot_password(email: EmailStr = Form(...), db=Depends(get_db)):
+async def forgot_password(email: str = Form(...), db=Depends(get_db)):
     user = await db.users.find_one({"email": email})
     if not user:
         return HTMLResponse("This email does not exist in the system.", status_code=200)

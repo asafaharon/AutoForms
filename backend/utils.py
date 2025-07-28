@@ -2,6 +2,8 @@ import re
 import html
 from typing import Optional
 from fastapi import HTTPException, status
+from bson import ObjectId
+from bson.errors import InvalidId
 
 
 def sanitize_filename(filename: str) -> str:
@@ -28,25 +30,15 @@ def escape_html(text: str) -> str:
 
 
 def validate_password(password: str) -> bool:
-    """Validate password strength."""
-    if len(password) < 8:
-        return False
-    # At least one uppercase, one lowercase, one digit
-    if not re.search(r'[A-Z]', password):
-        return False
-    if not re.search(r'[a-z]', password):
-        return False
-    if not re.search(r'\d', password):
-        return False
-    return True
+    """Validate password - minimal requirements."""
+    # Only require password to not be empty
+    return password and len(password.strip()) > 0
 
 
 def validate_username(username: str) -> bool:
-    """Validate username format."""
-    if not username or len(username) < 3 or len(username) > 50:
-        return False
-    # Allow alphanumeric, underscore, hyphen
-    return re.match(r'^[a-zA-Z0-9_-]+$', username) is not None
+    """Validate username format - minimal requirements."""
+    # Only require username to not be empty and reasonable length
+    return username and len(username.strip()) > 0 and len(username.strip()) <= 100
 
 
 def validate_form_title(title: str) -> bool:
@@ -60,6 +52,17 @@ def validate_url(url: str) -> bool:
     """Validate URL format."""
     url_regex = r'^https?://[^\s/$.?#].[^\s]*$'
     return re.match(url_regex, url) is not None
+
+
+def validate_object_id(obj_id: str) -> ObjectId:
+    """Validate and convert string to ObjectId."""
+    try:
+        return ObjectId(obj_id)
+    except InvalidId:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid ID format"
+        )
 
 
 class ValidationError(HTTPException):

@@ -13,9 +13,11 @@ class SimpleCache:
         self.ttl_seconds = ttl_seconds
         
     def _generate_key(self, prompt: str, model: str, temperature: float) -> str:
-        """Generate cache key from prompt and parameters"""
-        content = f"{prompt}:{model}:{temperature}"
-        return hashlib.md5(content.encode()).hexdigest()
+        """Generate cache key from prompt and parameters - using faster hash"""
+        # Use built-in hash() for speed, normalize prompt for better cache hits
+        normalized_prompt = prompt.lower().strip()
+        content = f"{normalized_prompt}:{model}:{temperature}"
+        return str(hash(content))
     
     def _is_expired(self, item: Dict[str, Any]) -> bool:
         """Check if cache item is expired"""
@@ -78,5 +80,5 @@ class SimpleCache:
         """Get current cache size"""
         return len(self.cache)
 
-# Global cache instance
-openai_cache = SimpleCache(max_size=50, ttl_seconds=1800)  # 30 minutes TTL
+# Global cache instance - optimized for performance
+openai_cache = SimpleCache(max_size=200, ttl_seconds=7200)  # 2 hours TTL, larger cache

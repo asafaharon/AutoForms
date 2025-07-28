@@ -4,6 +4,7 @@ from backend.db import get_db
 from backend.deps import get_current_user
 from backend.services.pdf_service import html_to_pdf_file
 from backend.services.email_service import send_form_pdf
+from backend.utils import validate_object_id
 from bson import ObjectId
 import os
 
@@ -16,7 +17,8 @@ async def send_creation_pdf(
     user = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    doc = await db.creations.find_one({"_id": ObjectId(cid), "user_id": user["_id"]})
+    cid_obj = validate_object_id(cid)
+    doc = await db.creations.find_one({"_id": cid_obj, "user_id": user["_id"]})
     if not doc:
         raise HTTPException(404)
 

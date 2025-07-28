@@ -14,7 +14,7 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import EmailStr
+# Removed pydantic dependency - using str for email
 from fastapi import Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
@@ -62,7 +62,7 @@ async def login_page(request: Request):
 async def register(
     request: Request,
     username: str = Form(...),
-    email:    EmailStr = Form(...),
+    email:    str = Form(...),
     password: str = Form(...),
     db:       AsyncIOMotorDatabase = Depends(get_db),
 ):
@@ -70,7 +70,7 @@ async def register(
     if not validate_username(username):
         return HTMLResponse(content="""
         <div class="bg-red-100 text-red-700 p-3 rounded text-center mb-3">
-         Username must be 3-50 characters and contain only letters, numbers, underscore, and hyphen.
+         Username cannot be empty.
         </div>
         """, status_code=400)
     
@@ -84,7 +84,7 @@ async def register(
     if not validate_password(password):
         return HTMLResponse(content="""
         <div class="bg-red-100 text-red-700 p-3 rounded text-center mb-3">
-         Password must be at least 8 characters with uppercase, lowercase, and number.
+         Password cannot be empty.
         </div>
         """, status_code=400)
 
@@ -141,7 +141,7 @@ async def register(
 @router.post("/login")
 async def login(
     request: Request,
-    email: EmailStr = Form(...),
+    email: str = Form(...),
     password: str = Form(...),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
