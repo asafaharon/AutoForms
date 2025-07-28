@@ -294,12 +294,12 @@
     <script>
         function demoShareEmail() {
             const subject = encodeURIComponent("Check out this form!");
-            const body = encodeURIComponent("Hi! Please fill out this form: http://127.0.0.1:8009/embed/demo-form-123\n\nThanks!");
+            const body = encodeURIComponent("Hi! Please fill out this form: " + window.location.origin + "/embed/demo-form-123\n\nThanks!");
             window.open(`mailto:?subject=${subject}&body=${body}`);
         }
 
         function demoShareWhatsApp() {
-            const text = encodeURIComponent("📝 Please fill out this quick form: http://127.0.0.1:8009/embed/demo-form-123");
+            const text = encodeURIComponent("📝 Please fill out this quick form: " + window.location.origin + "/embed/demo-form-123");
             window.open(`https://wa.me/?text=${text}`);
         }
 

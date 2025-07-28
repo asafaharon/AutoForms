@@ -23,8 +23,11 @@ async def forgot_password(email: str = Form(...), db=Depends(get_db)):
     if not user:
         return HTMLResponse("This email does not exist in the system.", status_code=200)
 
+    from backend.config import get_settings
+    settings = get_settings()
+    
     token = create_access_token({"sub": str(user["_id"])}, expires_minutes=15)
-    link = f"http://127.0.0.1:8083/reset-password?token={token}"
+    link = f"{settings.base_url}/reset-password?token={token}"
     await send_reset_email(email, link)
 
     return HTMLResponse("You have received an email to update your password.", status_code=200)

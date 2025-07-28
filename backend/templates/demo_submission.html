@@ -157,7 +157,7 @@
                     <pre class="bg-slate-800 p-3 rounded text-xs overflow-x-auto"><code>{
   "form_id": "abc123",
   "html": "&lt;form action='/api/submissions/submit/abc123' method='POST'&gt;...",
-  "submission_url": "http://localhost:8009/api/submissions/submit/abc123",
+  "submission_url": "https://your-domain.com/api/submissions/submit/abc123",
   "embed_code": "&lt;!-- Ready-to-embed code --&gt;",
   "iframe_code": "&lt;iframe src='/embed/abc123'&gt;..."
 }</code></pre>
@@ -165,7 +165,7 @@
                 
                 <div>
                     <h3 class="text-blue-400 font-mono text-sm mb-2">POST /api/submissions/submit/{form_id}</h3>
-                    <pre class="bg-slate-800 p-3 rounded text-xs overflow-x-auto"><code>curl -X POST "http://localhost:8009/api/submissions/submit/abc123" \
+                    <pre class="bg-slate-800 p-3 rounded text-xs overflow-x-auto"><code>curl -X POST "https://your-domain.com/api/submissions/submit/abc123" \
   -d "name=John+Doe&email=john@example.com&message=Hello"</code></pre>
                 </div>
                 
