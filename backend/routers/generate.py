@@ -129,6 +129,8 @@ async def save_form(
     db=Depends(get_db)
 ):
     user_obj_id = validate_object_id(user.id)
+    
+    # First save the form to get the ID
     doc = {
         "user_id": user_obj_id,
         "title": title,
@@ -137,6 +139,45 @@ async def save_form(
     }
     result = await db.forms.insert_one(doc)
     form_id = str(result.inserted_id)
+    
+    # Now update the HTML to include the correct submission URL
+    import re
+    
+    # Add form submission functionality to the HTML
+    updated_html = html
+    
+    # If form doesn't have an action attribute, add one
+    if 'action=' not in updated_html:
+        # Find form tag and add action attribute
+        form_pattern = r'<form([^>]*?)>'
+        def add_action(match):
+            attrs = match.group(1)
+            return f'<form{attrs} action="/api/submissions/submit/{form_id}" method="POST">'
+        updated_html = re.sub(form_pattern, add_action, updated_html, flags=re.IGNORECASE)
+    else:
+        # Replace existing action with correct one
+        action_pattern = r'action=["\'][^"\']*["\']'
+        updated_html = re.sub(action_pattern, f'action="/api/submissions/submit/{form_id}"', updated_html, flags=re.IGNORECASE)
+    
+    # Ensure method is POST
+    if 'method=' not in updated_html:
+        updated_html = updated_html.replace('<form', '<form method="POST"', 1)
+    else:
+        method_pattern = r'method=["\'][^"\']*["\']'
+        updated_html = re.sub(method_pattern, 'method="POST"', updated_html, flags=re.IGNORECASE)
+    
+    # Add hidden form_id field if not present
+    if f'name="form_id"' not in updated_html:
+        # Find the first form tag and add the hidden input after it
+        form_start_pattern = r'(<form[^>]*?>)'
+        replacement = f'\\1\n    <input type="hidden" name="form_id" value="{form_id}">'
+        updated_html = re.sub(form_start_pattern, replacement, updated_html, flags=re.IGNORECASE)
+    
+    # Update the saved form with the corrected HTML
+    await db.forms.update_one(
+        {"_id": result.inserted_id},
+        {"$set": {"html": updated_html}}
+    )
     
     # Send WebSocket notification
     await websocket_manager.notify_form_generated(user.id, {

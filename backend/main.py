@@ -246,11 +246,22 @@ async def embed_form(form_id: str, request: Request):
             return HTMLResponse(content=embed_html)
         
         db = await get_db()
-        form_doc = await db.forms.find_one({"id": form_id})
+        # Try to find form by _id first (MongoDB ObjectId)
+        from bson import ObjectId
+        from bson.errors import InvalidId
+        
+        form_doc = None
+        try:
+            # Try as ObjectId first
+            form_obj_id = ObjectId(form_id)
+            form_doc = await db.forms.find_one({"_id": form_obj_id})
+        except InvalidId:
+            # If not valid ObjectId, try as string
+            form_doc = await db.forms.find_one({"id": form_id})
         
         if not form_doc:
             return HTMLResponse(
-                content="<h1>Form not found</h1><p>The requested form does not exist.</p>",
+                content=f"<h1>Form not found</h1><p>The requested form with ID '{form_id}' does not exist.</p>",
                 status_code=404
             )
         
