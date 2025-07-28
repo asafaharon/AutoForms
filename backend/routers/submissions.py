@@ -110,25 +110,50 @@ async def submit_form(
         await db.form_submissions.insert_one(submission.to_dict())
         
         # Update form submission count
-        await db.forms.update_one(
-            {"id": form_id},
-            {"$inc": {"submission_count": 1}}
-        )
+        try:
+            # Try as ObjectId first (for forms saved with _id)
+            form_obj_id = ObjectId(form_id)
+            await db.forms.update_one(
+                {"_id": form_obj_id},
+                {"$inc": {"submission_count": 1}}
+            )
+        except InvalidId:
+            # Fallback to string id for older forms
+            await db.forms.update_one(
+                {"id": form_id},
+                {"$inc": {"submission_count": 1}}
+            )
         
         # Send email notification in background
         try:
             form_owner_id = form_doc.get("user_id")
             if form_owner_id:
-                user_doc = await db.users.find_one({"id": form_owner_id})
+                # Try to find user by ObjectId first, then by string id
+                user_doc = None
+                try:
+                    if isinstance(form_owner_id, ObjectId):
+                        user_doc = await db.users.find_one({"_id": form_owner_id})
+                    else:
+                        user_obj_id = ObjectId(form_owner_id)
+                        user_doc = await db.users.find_one({"_id": user_obj_id})
+                except (InvalidId, TypeError):
+                    # Fallback to string lookup
+                    user_doc = await db.users.find_one({"id": form_owner_id})
+                
                 if user_doc and user_doc.get("email"):
                     background_tasks.add_task(
                         send_submission_notification,
                         user_doc["email"],
                         submission
                     )
+                    print(f"📧 Notification queued for form owner: {user_doc.get('email')}")
+                else:
+                    print(f"⚠️ Form owner not found or no email: user_id={form_owner_id}")
         except Exception as e:
             # Email notification failure shouldn't stop submission
             print(f"Failed to send notification: {e}")
+            import traceback
+            traceback.print_exc()
         
         # Return success response
         return JSONResponse(
@@ -159,7 +184,21 @@ async def get_form_submissions(
         
         # Verify user owns this form - handle both dict and object formats
         user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
-        form_doc = await db.forms.find_one({"id": form_id, "user_id": user_id})
+        
+        # Try to find form by different ID formats
+        form_doc = None
+        try:
+            # Try as ObjectId first
+            form_obj_id = ObjectId(form_id)
+            user_obj_id = ObjectId(user_id)
+            form_doc = await db.forms.find_one({"_id": form_obj_id, "user_id": user_obj_id})
+        except (InvalidId, TypeError):
+            pass
+            
+        if not form_doc:
+            # Try string-based lookup
+            form_doc = await db.forms.find_one({"id": form_id, "user_id": user_id})
+            
         if not form_doc:
             raise HTTPException(status_code=404, detail="Form not found or access denied")
         
@@ -201,9 +240,23 @@ async def get_user_submissions(
         user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid user")
+        
+        # Try to find user forms by ObjectId first, then string id
+        user_forms = []
+        try:
+            user_obj_id = ObjectId(user_id)
+            user_forms = await db.forms.find({"user_id": user_obj_id}).to_list(length=None)
+        except (InvalidId, TypeError):
+            # Fallback to string lookup
+            user_forms = await db.forms.find({"user_id": user_id}).to_list(length=None)
             
-        user_forms = await db.forms.find({"user_id": user_id}).to_list(length=None)
-        form_ids = [form["id"] for form in user_forms]
+        # Extract form IDs, handling both _id and id fields
+        form_ids = []
+        for form in user_forms:
+            if "_id" in form:
+                form_ids.append(str(form["_id"]))
+            elif "id" in form:
+                form_ids.append(form["id"])
         
         if not form_ids:
             return {
@@ -255,10 +308,22 @@ async def delete_submission(
         
         # Verify user owns the form - handle both dict and object formats
         user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
-        form_doc = await db.forms.find_one({
-            "id": submission_doc["form_id"],
-            "user_id": user_id
-        })
+        
+        # Try to find form by different ID formats
+        form_doc = None
+        form_id = submission_doc["form_id"]
+        try:
+            # Try as ObjectId first
+            form_obj_id = ObjectId(form_id)
+            user_obj_id = ObjectId(user_id)
+            form_doc = await db.forms.find_one({"_id": form_obj_id, "user_id": user_obj_id})
+        except (InvalidId, TypeError):
+            pass
+            
+        if not form_doc:
+            # Try string-based lookup
+            form_doc = await db.forms.find_one({"id": form_id, "user_id": user_id})
+            
         if not form_doc:
             raise HTTPException(status_code=403, detail="Access denied")
         
@@ -269,10 +334,19 @@ async def delete_submission(
             raise HTTPException(status_code=404, detail="Submission not found")
         
         # Update form submission count
-        await db.forms.update_one(
-            {"id": submission_doc["form_id"]},
-            {"$inc": {"submission_count": -1}}
-        )
+        try:
+            # Try as ObjectId first
+            form_obj_id = ObjectId(form_id)
+            await db.forms.update_one(
+                {"_id": form_obj_id},
+                {"$inc": {"submission_count": -1}}
+            )
+        except (InvalidId, TypeError):
+            # Fallback to string id
+            await db.forms.update_one(
+                {"id": form_id},
+                {"$inc": {"submission_count": -1}}
+            )
         
         return {"success": True, "message": "Submission deleted successfully"}
         
@@ -294,7 +368,21 @@ async def export_submissions(
         
         # Verify user owns this form - handle both dict and object formats
         user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
-        form_doc = await db.forms.find_one({"id": form_id, "user_id": user_id})
+        
+        # Try to find form by different ID formats
+        form_doc = None
+        try:
+            # Try as ObjectId first
+            form_obj_id = ObjectId(form_id)
+            user_obj_id = ObjectId(user_id)
+            form_doc = await db.forms.find_one({"_id": form_obj_id, "user_id": user_obj_id})
+        except (InvalidId, TypeError):
+            pass
+            
+        if not form_doc:
+            # Try string-based lookup
+            form_doc = await db.forms.find_one({"id": form_id, "user_id": user_id})
+            
         if not form_doc:
             raise HTTPException(status_code=404, detail="Form not found or access denied")
         

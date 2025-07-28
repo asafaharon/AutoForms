@@ -147,17 +147,22 @@ def generate_embed_code(html: str, form_id: str) -> str:
     # Escape the HTML for JavaScript
     escaped_html = form_html.replace('\\', '\\\\').replace('`', '\\`').replace('${', '\\${')
     
-    embed_code = f'''
-<!-- AutoForms Embedded Form - Form ID: {form_id} -->
-<div id="autoforms-{form_id}"></div>
+    # Use template string with placeholder to avoid f-string conflicts
+    embed_template = '''
+<!-- AutoForms Embedded Form - Form ID: FORM_ID_PLACEHOLDER -->
+<div id="autoforms-FORM_ID_PLACEHOLDER"></div>
 <script>
-(function() {{
-    const formHtml = `{escaped_html}`;
-    document.getElementById('autoforms-{form_id}').innerHTML = formHtml;
-}})();
+(function() {
+    const formHtml = `ESCAPED_HTML_PLACEHOLDER`;
+    document.getElementById('autoforms-FORM_ID_PLACEHOLDER').innerHTML = formHtml;
+})();
 </script>
 <!-- End AutoForms Embedded Form -->
     '''.strip()
+    
+    # Safe replacement of placeholders
+    embed_code = embed_template.replace('FORM_ID_PLACEHOLDER', form_id)
+    embed_code = embed_code.replace('ESCAPED_HTML_PLACEHOLDER', escaped_html)
     
     return embed_code
 
@@ -190,7 +195,8 @@ def create_embeddable_form_page(html: str, form_id: str) -> str:
     
     settings = get_settings()
     
-    embed_page = f'''
+    # Use template string with placeholder to avoid f-string conflicts
+    embed_template = '''
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -199,98 +205,102 @@ def create_embeddable_form_page(html: str, form_id: str) -> str:
     <title>AutoForms - Form</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {{ 
+        body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 20px;
             background: #f8fafc;
-        }}
-        .form-container {{
+        }
+        .form-container {
             max-width: 600px;
             margin: 0 auto;
             background: white;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             padding: 24px;
-        }}
-        .powered-by {{
+        }
+        .powered-by {
             text-align: center;
             margin-top: 20px;
             font-size: 12px;
             color: #64748b;
-        }}
-        .powered-by a {{
+        }
+        .powered-by a {
             color: #2563eb;
             text-decoration: none;
-        }}
+        }
     </style>
 </head>
 <body>
     <div class="form-container">
-        {form_content}
+        FORM_CONTENT_PLACEHOLDER
     </div>
     
     <div class="powered-by">
-        Powered by <a href="{settings.base_url}" target="_blank">AutoForms</a>
+        Powered by <a href="BASE_URL_PLACEHOLDER" target="_blank">AutoForms</a>
     </div>
 
     <script>
-    // Form submission handling (same as above)
-    document.addEventListener('DOMContentLoaded', function() {{
+    // Form submission handling
+    document.addEventListener('DOMContentLoaded', function() {
         const forms = document.querySelectorAll('form[action*="/api/submissions/submit"]');
         
-        forms.forEach(form => {{
-            form.addEventListener('submit', function(e) {{
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
                 const formData = new FormData(form);
                 const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
                 
-                if (submitButton) {{
+                if (submitButton) {
                     submitButton.disabled = true;
                     submitButton.textContent = 'Submitting...';
-                }}
+                }
                 
-                fetch(form.action, {{
+                fetch(form.action, {
                     method: 'POST',
                     body: formData
-                }})
+                })
                 .then(response => response.json())
-                .then(data => {{
-                    if (data.success) {{
+                .then(data => {
+                    if (data.success) {
                         form.innerHTML = `
                             <div style="text-align: center; padding: 30px; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 12px; color: #0c4a6e;">
                                 <h3 style="color: #0c4a6e; margin-bottom: 15px; font-size: 20px;">✅ Thank you!</h3>
                                 <p style="margin: 0; font-size: 16px;">Your form has been submitted successfully.</p>
                             </div>
                         `;
-                    }} else {{
+                    } else {
                         throw new Error(data.message || 'Submission failed');
-                    }}
-                }})
-                .catch(error => {{
+                    }
+                })
+                .catch(error => {
                     console.error('Form submission error:', error);
                     
                     let errorDiv = form.querySelector('.error-message');
-                    if (!errorDiv) {{
+                    if (!errorDiv) {
                         errorDiv = document.createElement('div');
                         errorDiv.className = 'error-message';
                         errorDiv.style.cssText = 'background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;';
                         form.insertBefore(errorDiv, form.firstChild);
-                    }}
-                    errorDiv.innerHTML = `❌ ${{error.message || 'Failed to submit form. Please try again.'}}`;
+                    }
+                    errorDiv.innerHTML = `❌ ${error.message || 'Failed to submit form. Please try again.'}`;
                     
-                    if (submitButton) {{
+                    if (submitButton) {
                         submitButton.disabled = false;
                         submitButton.textContent = 'Submit';
-                    }}
-                }});
-            }});
-        }});
-    }});
+                    }
+                });
+            });
+        });
+    });
     </script>
 </body>
 </html>
     '''.strip()
+    
+    # Safe replacement of placeholders
+    embed_page = embed_template.replace('FORM_CONTENT_PLACEHOLDER', form_content)
+    embed_page = embed_page.replace('BASE_URL_PLACEHOLDER', settings.base_url)
     
     return embed_page

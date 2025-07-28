@@ -114,13 +114,24 @@ async def download_form(
     )
     if not doc:
         raise HTTPException(status_code=404, detail="Form not found")
-    with NamedTemporaryFile(delete=False, suffix=".html", mode="w", encoding="utf-8") as tmp:
-        tmp.write(doc["html"])
-        tmp.flush()
+    
+    # Generate PDF from HTML
+    try:
+        pdf_path = html_to_pdf_file(doc["html"])
         # Track file for cleanup
-        _temp_files.append(tmp.name)
-        filename = f"{doc['title'].replace(' ', '_')}.html"
-        return FileResponse(tmp.name, filename=filename, media_type="text/html")
+        _temp_files.append(pdf_path)
+        filename = f"{doc['title'].replace(' ', '_')}.pdf"
+        return FileResponse(pdf_path, filename=filename, media_type="application/pdf")
+    except Exception as e:
+        print(f"PDF generation error: {e}")
+        # Fallback to HTML if PDF generation fails
+        with NamedTemporaryFile(delete=False, suffix=".html", mode="w", encoding="utf-8") as tmp:
+            tmp.write(doc["html"])
+            tmp.flush()
+            # Track file for cleanup
+            _temp_files.append(tmp.name)
+            filename = f"{doc['title'].replace(' ', '_')}.html"
+            return FileResponse(tmp.name, filename=filename, media_type="text/html")
 
 @router.delete("/forms/{fid}", response_class=PlainTextResponse)
 async def delete_form(fid: str, user: UserPublic = Depends(get_current_user), db: AsyncIOMotorDatabase = Depends(get_db)):

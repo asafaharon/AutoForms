@@ -285,9 +285,16 @@
             document.getElementById('form-id').textContent = formData.id;
             document.getElementById('share-link').value = formData.shareLink;
             
+            // Debug logging
+            console.log('FormData:', formData);
+            console.log('HTML Code exists:', !!formData.htmlCode);
+            console.log('HTML Code length:', formData.htmlCode ? formData.htmlCode.length : 0);
+            console.log('HTML Code preview:', formData.htmlCode ? formData.htmlCode.substring(0, 100) : 'No HTML');
+            
             // Show actual form preview if HTML exists
             const previewDiv = document.getElementById('form-preview');
-            if (formData.htmlCode && formData.htmlCode.trim()) {
+            if (formData.htmlCode && formData.htmlCode.trim() && formData.htmlCode !== '""' && formData.htmlCode !== '{}') {
+                console.log('Showing actual form HTML');
                 // Create a scaled-down preview of the actual form
                 previewDiv.innerHTML = `
                     <div class="transform scale-75 origin-top-left w-full overflow-hidden" style="height: 300px;">
@@ -297,6 +304,7 @@
                     </div>
                 `;
             } else if (formData.id === 'demo-form-123') {
+                console.log('Showing demo form');
                 // Demo form preview
                 previewDiv.innerHTML = `
                     <div class="text-left max-w-md mx-auto">
@@ -321,12 +329,15 @@
                     </div>
                 `;
             } else {
-                // No form data available
+                console.log('No form data available - showing fallback');
+                // No form data available - show debug info
                 previewDiv.innerHTML = `
                     <div class="text-center py-8 text-slate-500">
                         <div class="mb-2">📝</div>
                         <div>Form preview not available</div>
-                        <div class="text-xs mt-2">Create a form first to see preview here</div>
+                        <div class="text-xs mt-2">Debug: Form ID = ${formData.id}</div>
+                        <div class="text-xs mt-1">HTML exists: ${!!formData.htmlCode}</div>
+                        <div class="text-xs mt-1">HTML content: ${formData.htmlCode ? 'Yes (' + formData.htmlCode.length + ' chars)' : 'No'}</div>
                     </div>
                 `;
             }
@@ -443,7 +454,11 @@ Thanks!`);
                 
                 // Update form preview with actual HTML
                 const previewDiv = document.getElementById('form-preview');
-                if (selectedForm.html && selectedForm.html.trim()) {
+                console.log('Selected form HTML:', selectedForm.html);
+                console.log('Selected form HTML length:', selectedForm.html ? selectedForm.html.length : 0);
+                
+                if (selectedForm.html && selectedForm.html.trim() && selectedForm.html !== '""' && selectedForm.html !== '{}') {
+                    console.log('Displaying selected form HTML');
                     // Create a scaled-down preview
                     previewDiv.innerHTML = `
                         <div class="transform scale-75 origin-top-left w-full overflow-hidden" style="height: 300px;">
@@ -453,10 +468,13 @@ Thanks!`);
                         </div>
                     `;
                 } else {
+                    console.log('No HTML available for selected form');
                     previewDiv.innerHTML = `
                         <div class="text-center py-8 text-slate-500">
                             <div class="mb-2">📝</div>
                             <div>Form preview not available</div>
+                            <div class="text-xs mt-2">Debug: HTML = ${selectedForm.html || 'undefined'}</div>
+                            <div class="text-xs mt-1">HTML Length: ${selectedForm.html ? selectedForm.html.length : 0}</div>
                         </div>
                     `;
                 }
