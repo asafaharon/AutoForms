@@ -134,15 +134,14 @@
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Form</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Submitted</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data Preview</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Source</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Summary</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="submissions-table" class="bg-white divide-y divide-slate-200">
                         <!-- Loading state -->
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                            <td colspan="4" class="px-6 py-12 text-center text-slate-500">
                                 <div class="animate-pulse">Loading submissions...</div>
                             </td>
                         </tr>
@@ -229,7 +228,7 @@
                 console.error('Error loading submissions:', error);
                 document.getElementById('submissions-table').innerHTML = `
                     <tr>
-                        <td colspan="5" class="px-6 py-12 text-center text-red-500">
+                        <td colspan="4" class="px-6 py-12 text-center text-red-500">
                             Error loading submissions: ${error.message}
                         </td>
                     </tr>
@@ -243,7 +242,7 @@
             if (submissions.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        <td colspan="4" class="px-6 py-12 text-center text-slate-500">
                             No submissions found. Create a form and share it to start collecting submissions!
                         </td>
                     </tr>
@@ -253,33 +252,42 @@
             
             tbody.innerHTML = submissions.map(submission => {
                 const submittedDate = new Date(submission.submitted_at).toLocaleString();
-                const dataPreview = Object.entries(submission.data).slice(0, 2)
-                    .map(([key, value]) => `${key}: ${String(value).substring(0, 30)}...`)
-                    .join(', ');
+                
+                // Create a user-friendly summary of the submitted data
+                const dataEntries = Object.entries(submission.data);
+                let summary = '';
+                if (dataEntries.length > 0) {
+                    const firstEntry = dataEntries[0];
+                    const firstName = firstEntry[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    const firstValue = String(firstEntry[1]).substring(0, 40);
+                    summary = `${firstName}: ${firstValue}`;
+                    if (dataEntries.length > 1) {
+                        summary += ` (+${dataEntries.length - 1} more field${dataEntries.length > 2 ? 's' : ''})`;
+                    }
+                } else {
+                    summary = 'No data';
+                }
                 
                 return `
                     <tr class="hover:bg-slate-50">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-slate-900">${submission.form_title}</div>
-                            <div class="text-sm text-slate-500">ID: ${submission.form_id}</div>
+                            <div class="text-sm text-slate-500">${new Date(submission.submitted_at).toLocaleDateString()}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                             ${submittedDate}
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-sm text-slate-600 max-w-xs truncate">
-                                ${dataPreview}
+                            <div class="text-sm text-slate-600 max-w-xs">
+                                ${summary}
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                            ${submission.ip_address || 'Unknown'}
-                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button onclick="viewSubmission('${submission.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
-                                View
+                            <button onclick="viewSubmission('${submission.id}')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs font-semibold mr-2 transition-colors">
+                                👁️ View Details
                             </button>
-                            <button onclick="deleteSubmission('${submission.id}')" class="text-red-600 hover:text-red-900">
-                                Delete
+                            <button onclick="deleteSubmission('${submission.id}')" class="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-lg text-xs font-semibold transition-colors">
+                                🗑️ Delete
                             </button>
                         </td>
                     </tr>
@@ -408,12 +416,64 @@
         }
         
         async function loadStatistics() {
-            // Load statistics for the dashboard cards
-            // This would make API calls to get submission counts
-            document.getElementById('total-submissions').textContent = '0';
-            document.getElementById('today-submissions').textContent = '0';
-            document.getElementById('active-forms').textContent = '0';
-            document.getElementById('week-submissions').textContent = '0';
+            try {
+                // Get all submissions to calculate statistics
+                const response = await fetch('/api/submissions/user/all?page=1&limit=1000', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load statistics');
+                }
+                
+                const data = await response.json();
+                const submissions = data.submissions || [];
+                
+                // Calculate statistics
+                const totalSubmissions = data.total_count || 0;
+                
+                // Get today's date in user's timezone
+                const today = new Date();
+                const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                
+                // Get week start (Monday)
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+                weekStart.setHours(0, 0, 0, 0);
+                
+                // Count submissions by date
+                let todayCount = 0;
+                let weekCount = 0;
+                const formIds = new Set();
+                
+                submissions.forEach(submission => {
+                    const submissionDate = new Date(submission.submitted_at);
+                    formIds.add(submission.form_id);
+                    
+                    if (submissionDate >= todayStart) {
+                        todayCount++;
+                    }
+                    if (submissionDate >= weekStart) {
+                        weekCount++;
+                    }
+                });
+                
+                // Update the dashboard
+                document.getElementById('total-submissions').textContent = totalSubmissions.toLocaleString();
+                document.getElementById('today-submissions').textContent = todayCount.toLocaleString();
+                document.getElementById('active-forms').textContent = formIds.size.toLocaleString();
+                document.getElementById('week-submissions').textContent = weekCount.toLocaleString();
+                
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                // Show error state
+                document.getElementById('total-submissions').textContent = '?';
+                document.getElementById('today-submissions').textContent = '?';
+                document.getElementById('active-forms').textContent = '?';
+                document.getElementById('week-submissions').textContent = '?';
+            }
         }
     </script>
 
