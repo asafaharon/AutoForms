@@ -2,7 +2,7 @@ import os
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from backend.deps import get_current_user
+from backend.deps import get_current_user, get_current_user_optional
 from backend.models.user import UserPublic
 
 router = APIRouter()
@@ -13,7 +13,7 @@ templates = Jinja2Templates(directory=templates_dir)
 @router.get("/generator", response_class=HTMLResponse)
 async def generator_page(
     request: Request,
-    user: UserPublic = Depends(get_current_user)
+    user: UserPublic | None = Depends(get_current_user_optional)
 ):
     return templates.TemplateResponse(
         "test-generator.html",

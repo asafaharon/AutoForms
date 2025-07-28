@@ -24,13 +24,14 @@ def build_form_response_html(generated_html: str, for_demo: bool = False) -> str
     if not for_demo:
         save_form_html = f"""
         <!-- Save Form -->
-        <form hx-post="/api/save-form" hx-swap="none">
+        <form hx-post="/api/save-form" hx-target="#save-result" hx-swap="innerHTML">
             <input type="hidden" name="html" value="{escaped_html}">
             <input type="text" name="title" placeholder="Give the form a name (e.g., November Registration)" required class="w-full border border-slate-300 px-3 py-2 rounded-lg mb-2 focus:ring-2 focus:ring-blue-400">
             <button type="submit" data-loading-text="Saving..." class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition">
                 💾 Save to My Forms
             </button>
         </form>
+        <div id="save-result" class="mt-4"></div>
         """
         
         email_form_html = f"""
@@ -105,9 +106,25 @@ async def generate_html_preview(
     prompt: str = Form(...),
     lang: str = Form(None)
 ):
+    from backend.deps import get_current_user_optional
+    
+    # Check if user is authenticated
+    try:
+        # Try to get user from cookie
+        token = request.cookies.get("token")
+        if token:
+            from backend.db import get_db
+            db = await get_db()
+            user = await get_current_user_optional(token, db)
+            is_authenticated = user is not None
+        else:
+            is_authenticated = False
+    except:
+        is_authenticated = False
+    
     generated_html = await generate_html_only(prompt)
     if request.headers.get("Hx-Request"):
-        return HTMLResponse(content=build_form_response_html(generated_html, for_demo=False))
+        return HTMLResponse(content=build_form_response_html(generated_html, for_demo=not is_authenticated))
     return JSONResponse({"html": generated_html})
 
 
@@ -186,7 +203,23 @@ async def save_form(
         "created_at": datetime.utcnow().isoformat()
     })
     
-    return HTMLResponse(status_code=200)
+    return HTMLResponse(
+        content=f"""
+        <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+            <div class="text-green-800 font-semibold mb-2">✅ Form Saved Successfully!</div>
+            <p class="text-green-700 text-sm">Your form "{title}" has been saved to your account.</p>
+            <div class="mt-3 space-x-2">
+                <a href="/share-form?form_id={form_id}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors">
+                    📤 Share Form
+                </a>
+                <a href="/submissions" class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm transition-colors">
+                    📊 View Submissions
+                </a>
+            </div>
+        </div>
+        """,
+        status_code=200
+    )
 
 
 @router.post("/send-form-pdf", response_class=HTMLResponse)

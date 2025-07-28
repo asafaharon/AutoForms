@@ -79,6 +79,35 @@ async def get_current_admin_user(current_user: UserPublic = Depends(get_current_
     return current_user
 
 
+async def get_current_user_optional(token: str | None = Cookie(None), db=Depends(get_db)) -> UserPublic | None:
+    """Get current user if authenticated, return None if not authenticated"""
+    if token is None:
+        return None
+    
+    try:
+        payload = decode_token(token)
+        user_id = payload.get("sub")
+        if user_id is None:
+            return None
+    except (ValueError, JWTError):
+        return None
+
+    try:
+        user_obj_id = ObjectId(user_id)
+        user_doc = await db.users.find_one({"_id": user_obj_id})
+        if user_doc is None:
+            return None
+
+        return UserPublic(
+            id=str(user_doc["_id"]),
+            username=user_doc["username"],
+            email=user_doc["email"],
+            created_at=user_doc["created_at"],
+            is_admin=user_doc.get("is_admin", False)
+        )
+    except (InvalidId, PyMongoError):
+        return None
+
 async def get_current_user_websocket(token: str) -> dict:
     """Get current user for WebSocket authentication"""
     try:
