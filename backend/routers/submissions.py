@@ -209,6 +209,13 @@ async def get_form_submissions(
         cursor = db.form_submissions.find({"form_id": form_id}).sort("submitted_at", -1).skip(skip).limit(limit)
         submissions = await cursor.to_list(length=limit)
         
+        # Convert ObjectId fields to strings for JSON serialization
+        for submission in submissions:
+            if "_id" in submission:
+                submission["_id"] = str(submission["_id"])
+            if "submitted_at" in submission and hasattr(submission["submitted_at"], "isoformat"):
+                submission["submitted_at"] = submission["submitted_at"].isoformat()
+        
         # Get total count
         total_count = await db.form_submissions.count_documents({"form_id": form_id})
         
@@ -276,6 +283,13 @@ async def get_user_submissions(
         ).sort("submitted_at", -1).skip(skip).limit(limit)
         
         submissions = await cursor.to_list(length=limit)
+        
+        # Convert ObjectId fields to strings for JSON serialization
+        for submission in submissions:
+            if "_id" in submission:
+                submission["_id"] = str(submission["_id"])
+            if "submitted_at" in submission and hasattr(submission["submitted_at"], "isoformat"):
+                submission["submitted_at"] = submission["submitted_at"].isoformat()
         
         # Get total count
         total_count = await db.form_submissions.count_documents({"form_id": {"$in": form_ids}})
@@ -388,6 +402,13 @@ async def export_submissions(
         
         # Get all submissions
         submissions = await db.form_submissions.find({"form_id": form_id}).sort("submitted_at", -1).to_list(length=None)
+        
+        # Convert ObjectId fields to strings for JSON serialization
+        for submission in submissions:
+            if "_id" in submission:
+                submission["_id"] = str(submission["_id"])
+            if "submitted_at" in submission and hasattr(submission["submitted_at"], "isoformat"):
+                submission["submitted_at"] = submission["submitted_at"].isoformat()
         
         if format.lower() == "csv":
             # Convert to CSV format
