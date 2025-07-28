@@ -76,7 +76,18 @@ async def submit_form(
             )
         
         # Get the form details
-        form_doc = await db.forms.find_one({"id": form_id})
+        from bson import ObjectId
+        from bson.errors import InvalidId
+        
+        form_doc = None
+        try:
+            # Try as ObjectId first
+            form_obj_id = ObjectId(form_id)
+            form_doc = await db.forms.find_one({"_id": form_obj_id})
+        except InvalidId:
+            # If not valid ObjectId, try as string
+            form_doc = await db.forms.find_one({"id": form_id})
+        
         if not form_doc:
             raise HTTPException(status_code=404, detail="Form not found")
         
@@ -131,7 +142,9 @@ async def submit_form(
         
     except Exception as e:
         print(f"Form submission error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to process form submission")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to process form submission: {str(e)}")
 
 @router.get("/form/{form_id}")
 async def get_form_submissions(
