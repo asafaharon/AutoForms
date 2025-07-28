@@ -250,7 +250,7 @@
             title: '{{ selected_form.title if selected_form else "Demo Contact Form" }}',
             shareLink: window.location.origin + '/embed/{{ selected_form.id if selected_form else "demo-form-123" }}',
             iframeCode: '',
-            htmlCode: '{{ selected_form.html if selected_form else "" }}'
+            htmlCode: {{ (selected_form.html if selected_form else "") | tojson | safe }}
         };
 
         // Store all user forms for form switching
@@ -260,7 +260,7 @@
                 {
                     id: '{{ form.id }}',
                     title: '{{ form.title }}',
-                    html: `{{ form.html | replace('"', '\\"') | replace('\n', '\\n') | replace('\r', '') }}`,
+                    html: {{ form.html | tojson | safe }},
                     shareLink: window.location.origin + '/embed/{{ form.id }}'
                 }{% if not loop.last %},{% endif %}
                 {% endfor %}
@@ -281,33 +281,55 @@
         });
 
         function initializeFormData() {
-            // In real implementation, this data would come from the backend
+            // Update page elements with actual form data
             document.getElementById('form-id').textContent = formData.id;
             document.getElementById('share-link').value = formData.shareLink;
             
-            // Simple form preview
-            document.getElementById('form-preview').innerHTML = `
-                <div class="text-left max-w-md mx-auto">
-                    <h3 class="font-semibold text-slate-800 mb-3">${formData.title}</h3>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between py-1 border-b border-slate-200">
-                            <span class="text-slate-600">📝 Name field</span>
-                            <span class="text-slate-400">Required</span>
-                        </div>
-                        <div class="flex justify-between py-1 border-b border-slate-200">
-                            <span class="text-slate-600">📧 Email field</span>
-                            <span class="text-slate-400">Required</span>
-                        </div>
-                        <div class="flex justify-between py-1 border-b border-slate-200">
-                            <span class="text-slate-600">💬 Message field</span>
-                            <span class="text-slate-400">Optional</span>
-                        </div>
-                        <div class="pt-2">
-                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Submit Button</span>
+            // Show actual form preview if HTML exists
+            const previewDiv = document.getElementById('form-preview');
+            if (formData.htmlCode && formData.htmlCode.trim()) {
+                // Create a scaled-down preview of the actual form
+                previewDiv.innerHTML = `
+                    <div class="transform scale-75 origin-top-left w-full overflow-hidden" style="height: 300px;">
+                        <div class="bg-white p-4 border rounded-lg">
+                            ${formData.htmlCode}
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else if (formData.id === 'demo-form-123') {
+                // Demo form preview
+                previewDiv.innerHTML = `
+                    <div class="text-left max-w-md mx-auto">
+                        <h3 class="font-semibold text-slate-800 mb-3">${formData.title}</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between py-1 border-b border-slate-200">
+                                <span class="text-slate-600">📝 Name field</span>
+                                <span class="text-slate-400">Required</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-slate-200">
+                                <span class="text-slate-600">📧 Email field</span>
+                                <span class="text-slate-400">Required</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-slate-200">
+                                <span class="text-slate-600">💬 Message field</span>
+                                <span class="text-slate-400">Optional</span>
+                            </div>
+                            <div class="pt-2">
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Submit Button</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // No form data available
+                previewDiv.innerHTML = `
+                    <div class="text-center py-8 text-slate-500">
+                        <div class="mb-2">📝</div>
+                        <div>Form preview not available</div>
+                        <div class="text-xs mt-2">Create a form first to see preview here</div>
+                    </div>
+                `;
+            }
         }
 
         function updateEmbedCode() {
