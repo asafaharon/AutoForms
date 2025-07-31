@@ -22,7 +22,7 @@
                 AutoForms ✨
             </h1>
             <div class="flex items-center space-x-4">
-                <a href="/" class="text-slate-600 hover:text-blue-600 font-medium">🏠 Home</a>
+                <a href="/dashboard" class="text-slate-600 hover:text-blue-600 font-medium">🏠 Home</a>
                 <a href="/dashboard" class="text-slate-600 hover:text-blue-600 font-medium">Dashboard</a>
                 <a href="/test-generator" class="text-slate-600 hover:text-blue-600 font-medium">Generator</a>
                 <span class="text-slate-500">{{ user.username }}</span>
@@ -46,10 +46,6 @@
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
             <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <select id="form-filter" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option value="">All Forms</option>
-                    </select>
-                    
                     <select id="time-filter" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">All Time</option>
                         <option value="today">Today</option>
@@ -136,13 +132,12 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Form</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Submitted</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Summary</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="submissions-table" class="bg-white divide-y divide-slate-200">
                         <!-- Loading state -->
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center text-slate-500">
+                            <td colspan="3" class="px-6 py-12 text-center text-slate-500">
                                 <div class="animate-pulse">Loading submissions...</div>
                             </td>
                         </tr>
@@ -193,8 +188,12 @@
         // Load initial data
         document.addEventListener('DOMContentLoaded', function() {
             loadSubmissions();
-            loadFormOptions();
             loadStatistics();
+            
+            // Add event listener for time filter
+            document.getElementById('time-filter').addEventListener('change', function() {
+                loadSubmissions(1);
+            });
         });
         
         async function loadSubmissions(page = 1) {
@@ -206,8 +205,10 @@
                     limit: 20
                 });
                 
-                if (selectedFormId) {
-                    params.append('form_id', selectedFormId);
+                // Add time filter if selected
+                const timeFilter = document.getElementById('time-filter').value;
+                if (timeFilter) {
+                    params.append('time_filter', timeFilter);
                 }
                 
                 const response = await fetch(`/api/submissions/user/all?${params}`, {
@@ -229,7 +230,7 @@
                 console.error('Error loading submissions:', error);
                 document.getElementById('submissions-table').innerHTML = `
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center text-red-500">
+                        <td colspan="3" class="px-6 py-12 text-center text-red-500">
                             Error loading submissions: ${error.message}
                         </td>
                     </tr>
@@ -243,7 +244,7 @@
             if (submissions.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center text-slate-500">
+                        <td colspan="3" class="px-6 py-12 text-center text-slate-500">
                             No submissions found. Create a form and share it to start collecting submissions!
                         </td>
                     </tr>
@@ -282,14 +283,6 @@
                             <div class="text-sm text-slate-600 max-w-xs">
                                 ${summary}
                             </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button onclick="viewSubmission('${submission.id}')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-lg text-xs font-semibold mr-2 transition-colors">
-                                👁️ View Details
-                            </button>
-                            <button onclick="deleteSubmission('${submission.id}')" class="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-lg text-xs font-semibold transition-colors">
-                                🗑️ Delete
-                            </button>
                         </td>
                     </tr>
                 `;
@@ -359,7 +352,6 @@
                     
                     <div>
                         <h4 class="font-semibold text-slate-800 mb-2">Technical Details</h4>
-                        <p><strong>IP Address:</strong> ${submission.ip_address || 'Unknown'}</p>
                         <p><strong>User Agent:</strong> ${submission.user_agent || 'Unknown'}</p>
                         <p><strong>Referrer:</strong> ${submission.referrer || 'Direct'}</p>
                     </div>

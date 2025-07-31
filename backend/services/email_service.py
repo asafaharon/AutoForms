@@ -125,15 +125,59 @@ async def send_reset_email(to_email: str, link: str):
     except Exception as e:
         print(f"❌ Failed to send password reset email to {to_email}: {e}")
 
-async def send_submission_notification(to_email: str, submission: FormSubmission):
+def get_email_translations(language: str = "en") -> dict:
+    """Get email template translations based on language"""
+    translations = {
+        "en": {
+            "subject": "New submission for '{form_title}'",
+            "header": "🎉 New Form Submission!",
+            "form_label": "Form:",
+            "submitted_label": "Submitted:",
+            "form_data_title": "📝 Form Data:",
+            "submission_details_title": "Submission Details:",
+            "user_agent_label": "User Agent:",
+            "referrer_label": "Referrer:",
+            "dashboard_button": "View Dashboard",
+            "unknown": "Unknown",
+            "direct": "Direct",
+            "text_header": "New Form Submission Received!",
+            "view_dashboard_text": "View all submissions in your AutoForms dashboard.",
+            "signature": "AutoForms Team"
+        },
+        "he": {
+            "subject": "הגשה חדשה עבור '{form_title}'",
+            "header": "🎉 הגשת טופס חדשה!",
+            "form_label": "טופס:",
+            "submitted_label": "הוגש בתאריך:",
+            "form_data_title": "📝 נתוני הטופס:",
+            "submission_details_title": "פרטי ההגשה:",
+            "user_agent_label": "דפדפן:",
+            "referrer_label": "מקור:",
+            "dashboard_button": "צפה בלוח הבקרה",
+            "unknown": "לא ידוע",
+            "direct": "ישיר",
+            "text_header": "התקבלה הגשת טופס חדשה!",
+            "view_dashboard_text": "צפה בכל ההגשות בלוח הבקרה של AutoForms.",
+            "signature": "צוות AutoForms"
+        }
+    }
+    return translations.get(language, translations["en"])
+
+async def send_submission_notification(to_email: str, submission: FormSubmission, form_language: str = "en"):
     """Send email notification when a form receives a new submission"""
+    
+    # Get translations for the form's language
+    t = get_email_translations(form_language)
+    
+    # Set email direction based on language
+    email_dir = "rtl" if form_language == "he" else "ltr"
     try:
         smtp_config = _get_smtp_config()
         
         msg = EmailMessage()
         msg["From"] = smtp_config['from_email']
         msg["To"] = to_email
-        msg["Subject"] = f"New submission for '{submission.form_title}'"
+        msg["Subject"] = t["subject"].format(form_title=submission.form_title)
         
         # Format submission data for email
         data_html = ""
@@ -148,65 +192,64 @@ async def send_submission_notification(to_email: str, submission: FormSubmission
         
         # Text version
         text_content = f"""
-New Form Submission Received!
+{t["text_header"]}
 
-Form: {submission.form_title}
-Submitted: {submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S UTC')}
+{t["form_label"]} {submission.form_title}
+{t["submitted_label"]} {submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S UTC')}
 
-Form Data:
+{t["form_data_title"].replace('📝 ', '')}
 {data_text}
 
-Submission Details:
-- IP Address: {submission.ip_address or 'Unknown'}
-- User Agent: {submission.user_agent or 'Unknown'}
-- Referrer: {submission.referrer or 'Direct'}
+{t["submission_details_title"]}
+- {t["user_agent_label"]} {submission.user_agent or t["unknown"]}
+- {t["referrer_label"]} {submission.referrer or t["direct"]}
 
-View all submissions in your AutoForms dashboard.
+{t["view_dashboard_text"]}
 
-AutoForms Team
+{t["signature"]}
         """.strip()
         
         # HTML version
         html_content = f"""
-        <html>
+        <html dir="{email_dir}">
         <head>
+            <meta charset="UTF-8">
             <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; direction: {email_dir}; }}
                 .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background: #2563eb; color: white; padding: 20px; border-radius: 8px 8px 0 0; }}
-                .content {{ background: #f8fafc; padding: 20px; }}
+                .header {{ background: #2563eb; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: {'right' if form_language == 'he' else 'left'}; }}
+                .content {{ background: #f8fafc; padding: 20px; text-align: {'right' if form_language == 'he' else 'left'}; }}
                 .submission-data {{ background: white; padding: 15px; border-radius: 6px; margin: 15px 0; }}
                 table {{ width: 100%; border-collapse: collapse; }}
-                td {{ padding: 8px; border-bottom: 1px solid #e2e8f0; }}
+                td {{ padding: 8px; border-bottom: 1px solid #e2e8f0; text-align: {'right' if form_language == 'he' else 'left'}; }}
                 .meta {{ background: #f1f5f9; padding: 10px; border-radius: 4px; font-size: 0.9em; color: #64748b; }}
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h2>🎉 New Form Submission!</h2>
+                    <h2>{t["header"]}</h2>
                 </div>
                 <div class="content">
-                    <p><strong>Form:</strong> {html.escape(submission.form_title)}</p>
-                    <p><strong>Submitted:</strong> {submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+                    <p><strong>{t["form_label"]}</strong> {html.escape(submission.form_title)}</p>
+                    <p><strong>{t["submitted_label"]}</strong> {submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
                     
                     <div class="submission-data">
-                        <h3>📝 Form Data:</h3>
+                        <h3>{t["form_data_title"]}</h3>
                         <table>
                             {data_html}
                         </table>
                     </div>
                     
                     <div class="meta">
-                        <strong>Submission Details:</strong><br>
-                        IP Address: {html.escape(submission.ip_address or 'Unknown')}<br>
-                        User Agent: {html.escape(submission.user_agent or 'Unknown')}<br>
-                        Referrer: {html.escape(submission.referrer or 'Direct')}
+                        <strong>{t["submission_details_title"]}</strong><br>
+                        {t["user_agent_label"]} {html.escape(submission.user_agent or t["unknown"])}<br>
+                        {t["referrer_label"]} {html.escape(submission.referrer or t["direct"])}
                     </div>
                     
                     <p style="margin-top: 20px;">
                         <a href="#" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
-                            View Dashboard
+                            {t["dashboard_button"]}
                         </a>
                     </p>
                 </div>

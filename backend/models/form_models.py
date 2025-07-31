@@ -32,6 +32,7 @@ class Form:
     created_at: datetime = field(default_factory=datetime.utcnow)
     is_active: bool = True
     submission_count: int = 0
+    language: str = "en"
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -42,7 +43,8 @@ class Form:
             "user_id": self.user_id,
             "created_at": self.created_at.isoformat(),
             "is_active": self.is_active,
-            "submission_count": self.submission_count
+            "submission_count": self.submission_count,
+            "language": self.language
         }
 
 @dataclass
@@ -53,7 +55,6 @@ class FormSubmission:
     form_title: str
     data: Dict[str, Any]  # The actual form field data
     submitted_at: datetime = field(default_factory=datetime.utcnow)
-    ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     referrer: Optional[str] = None
     
@@ -64,7 +65,6 @@ class FormSubmission:
             "form_title": self.form_title,
             "data": self.data,
             "submitted_at": self.submitted_at.isoformat(),
-            "ip_address": self.ip_address,
             "user_agent": self.user_agent,
             "referrer": self.referrer
         }

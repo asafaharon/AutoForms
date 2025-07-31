@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from bson import ObjectId
 from backend.services.pdf_service import html_to_pdf_file, html_to_text_file
 from backend.services.email_service import send_form_pdf
-from backend.services.form_generator import generate_html_only, chat_with_gpt
+from backend.services.form_generator import generate_html_only, detect_language_fast, chat_with_gpt
 from backend.services.websocket_manager import websocket_manager
 from backend.deps import get_current_user, get_db
 from backend.models.user import UserPublic
@@ -142,16 +142,27 @@ async def generate_demo_html(prompt: str = Form(...)):
 async def save_form(
     title: str = Form(...),
     html: str = Form(...),
+    prompt: str = Form(""),
+    language: str = Form("en"),
     user: UserPublic = Depends(get_current_user),
     db=Depends(get_db)
 ):
     user_obj_id = validate_object_id(user.id)
+    
+    # Auto-detect language if not provided or if default
+    if not language or language == "en":
+        if prompt:
+            detected_lang = detect_language_fast(prompt)
+            if detected_lang != "en":
+                language = detected_lang
     
     # First save the form to get the ID
     doc = {
         "user_id": user_obj_id,
         "title": title,
         "html": html,
+        "prompt": prompt,
+        "language": language,
         "created_at": datetime.utcnow(),
     }
     result = await db.forms.insert_one(doc)

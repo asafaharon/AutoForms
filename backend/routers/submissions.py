@@ -12,6 +12,7 @@ from backend.db import get_db
 from backend.deps import get_current_user
 from backend.models.form_models import FormSubmission
 from backend.services.email_service import send_submission_notification
+from backend.services.form_generator import detect_language_fast
 
 router = APIRouter(prefix="/api/submissions", tags=["submissions"])
 
@@ -55,8 +56,7 @@ async def submit_form(
                 form_title=form_titles.get(form_id, "Demo Form"),
                 data=form_data,
                 submitted_at=datetime.utcnow(),
-                ip_address=request.client.host if request.client else None,
-                user_agent=request.headers.get("user-agent"),
+                    user_agent=request.headers.get("user-agent"),
                 referrer=request.headers.get("referer")
             )
             
@@ -101,7 +101,6 @@ async def submit_form(
             form_title=form_doc.get("title", "Untitled Form"),
             data=form_data,
             submitted_at=datetime.utcnow(),
-            ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
             referrer=request.headers.get("referer")
         )
@@ -141,10 +140,19 @@ async def submit_form(
                     user_doc = await db.users.find_one({"id": form_owner_id})
                 
                 if user_doc and user_doc.get("email"):
+                    # Detect form language from stored language field or form content
+                    form_language = form_doc.get("language", "en")
+                    if form_language == "en":
+                        # Fallback: detect from form content if language not stored
+                        form_content = form_doc.get("prompt", "")
+                        if form_content:
+                            form_language = detect_language_fast(form_content)
+                    
                     background_tasks.add_task(
                         send_submission_notification,
                         user_doc["email"],
-                        submission
+                        submission,
+                        form_language
                     )
                     print(f"📧 Notification queued for form owner: {user_doc.get('email')}")
                 else:
@@ -423,7 +431,7 @@ async def export_submissions(
                     field_names.update(sub["data"].keys())
                 
                 # Add metadata fields
-                all_fields = ["submission_id", "submitted_at", "ip_address"] + sorted(field_names)
+                all_fields = ["submission_id", "submitted_at"] + sorted(field_names)
                 
                 writer = csv.DictWriter(output, fieldnames=all_fields)
                 writer.writeheader()
@@ -432,7 +440,6 @@ async def export_submissions(
                     row = {
                         "submission_id": sub["id"],
                         "submitted_at": sub["submitted_at"],
-                        "ip_address": sub.get("ip_address", "")
                     }
                     # Add form data
                     row.update(sub["data"])
