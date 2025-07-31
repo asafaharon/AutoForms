@@ -89,7 +89,7 @@ async def share_form_page(
     print(f"DEBUG: User ID: {user.id if user else 'None'}")
     print(f"DEBUG: Found {len(user_forms)} forms")
     if user_forms:
-        print(f"DEBUG: First form: {user_forms[0].get('title', 'No title')} - ID: {user_forms[0].get('id', 'No ID')}")
+        print(f"DEBUG: First form: {user_forms[0].get('title', 'No title')}")
     print(f"DEBUG: Selected form: {selected_form.get('title', 'No title') if selected_form else 'None'}")
     
     return templates.TemplateResponse(

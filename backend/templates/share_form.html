@@ -167,12 +167,6 @@
                 <button onclick="viewSubmissions()" class="bg-white hover:bg-green-50 text-slate-700 py-3 px-4 rounded-lg border border-slate-200 text-sm font-medium transition-colors text-center">
                     📊 View Submissions
                 </button>
-                <button onclick="testForm()" class="bg-white hover:bg-yellow-50 text-slate-700 py-3 px-4 rounded-lg border border-slate-200 text-sm font-medium transition-colors text-center">
-                    🧪 Test Form
-                </button>
-                <button onclick="editForm()" class="bg-white hover:bg-purple-50 text-slate-700 py-3 px-4 rounded-lg border border-slate-200 text-sm font-medium transition-colors text-center">
-                    ✏️ Edit Form
-                </button>
             </div>
         </div>
 
@@ -489,15 +483,6 @@ Thanks!`);
             window.open('/submissions', '_blank');
         }
 
-        function testForm() {
-            if (confirm('This will open your form in a new tab so you can test it by submitting sample data. Continue?')) {
-                window.open(formData.shareLink, '_blank');
-            }
-        }
-
-        function editForm() {
-            alert('Edit functionality would redirect to form editor (not implemented in demo)');
-        }
     </script>
 
 </body>

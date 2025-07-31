@@ -151,7 +151,38 @@
                     <div>
                         <h3 class="text-lg font-semibold text-slate-700 mb-3">Try this working demo form:</h3>
                         <div class="bg-slate-50 rounded-lg p-4 border">
-                            <iframe src="/embed/demo-form-123" width="100%" height="300" frameborder="0" class="rounded"></iframe>
+                            <iframe 
+                                id="demo-iframe"
+                                src="/embed/demo-form-123" 
+                                width="100%" 
+                                height="400" 
+                                frameborder="0" 
+                                class="rounded border-0"
+                                style="min-height: 400px;"
+                                onload="console.log('Demo form loaded successfully')"
+                                onerror="showFallbackForm()"
+                            ></iframe>
+                            <div id="fallback-form" style="display: none;" class="p-4 bg-white rounded border">
+                                <h4 class="font-semibold mb-3">Demo Contact Form</h4>
+                                <form action="/api/submissions/submit/demo-form-123" method="POST" class="space-y-3">
+                                    <input type="hidden" name="form_id" value="demo-form-123">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                                        <input type="text" name="name" class="w-full border border-slate-300 rounded px-3 py-2" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                                        <input type="email" name="email" class="w-full border border-slate-300 rounded px-3 py-2" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Message</label>
+                                        <textarea name="message" class="w-full border border-slate-300 rounded px-3 py-2 h-16"></textarea>
+                                    </div>
+                                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+                                        Submit Demo
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                         <div class="mt-3 text-sm text-slate-600">
                             <strong>This form actually collects data!</strong> Try submitting it.
@@ -306,6 +337,26 @@
         function demoShowQR() {
             alert("In the real interface, this would generate a QR code automatically! Visit /share-form to see it in action.");
         }
+
+        function showFallbackForm() {
+            console.log('Iframe failed to load, showing fallback form');
+            document.getElementById('demo-iframe').style.display = 'none';
+            document.getElementById('fallback-form').style.display = 'block';
+        }
+
+        // Check if iframe loaded properly after a delay
+        setTimeout(function() {
+            const iframe = document.getElementById('demo-iframe');
+            try {
+                // Try to access iframe content to check if it loaded
+                if (iframe.contentDocument === null) {
+                    showFallbackForm();
+                }
+            } catch (e) {
+                // Cross-origin or other error, assume it's working if no explicit error
+                console.log('Iframe access restricted (normal for cross-origin), assuming it loaded correctly');
+            }
+        }, 3000);
     </script>
 
 </body>
