@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip3 install:*)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(python:*)",
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(ls:*)",
+      "Bash(apt list:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(find:*)",
+      "Bash(venv/bin/python:*)",
+      "Bash(rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": []
+  }
+}
