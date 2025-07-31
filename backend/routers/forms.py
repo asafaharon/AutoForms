@@ -13,6 +13,7 @@ from backend.deps import get_current_user
 from backend.models.user import UserPublic
 from backend.services.email_service import send_form_link, send_form_pdf
 from backend.services.pdf_service import html_to_pdf_file
+from backend.services.db_transaction import TransactionManager
 from backend.utils import validate_object_id
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -137,9 +138,26 @@ async def download_form(
 async def delete_form(fid: str, user: UserPublic = Depends(get_current_user), db: AsyncIOMotorDatabase = Depends(get_db)):
     fid_obj = validate_object_id(fid)
     user_obj_id = validate_object_id(user.id)
-    res = await db.forms.delete_one({"_id": fid_obj, "user_id": user_obj_id})
-    if res.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Form not found")
+    
+    # Delete form and related data with transaction
+    async with TransactionManager() as tm:
+        transaction_db = await tm.get_database()
+        
+        # Delete the form
+        res = await transaction_db.forms.delete_one(
+            {"_id": fid_obj, "user_id": user_obj_id},
+            session=tm.session
+        )
+        
+        if res.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Form not found")
+        
+        # Delete all submissions for this form
+        await transaction_db.form_submissions.delete_many(
+            {"form_id": fid},
+            session=tm.session
+        )
+        
     return "✅ Successfully deleted"
 
 @router.post("/forms/{fid}/email-pdf", status_code=status.HTTP_202_ACCEPTED)

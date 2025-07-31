@@ -8,6 +8,8 @@ from fastapi import HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import time
 from collections import defaultdict
+import hashlib
+import hmac
 
 class SecurityManager:
     """Enhanced security manager for production"""
@@ -97,6 +99,50 @@ class SecurityManager:
         # Add current request
         self.rate_limit_storage[client_id].append(current_time)
         return True
+    
+    @staticmethod
+    def generate_csrf_token() -> str:
+        """Generate secure CSRF token"""
+        return secrets.token_urlsafe(32)
+    
+    @staticmethod
+    def create_csrf_token_with_secret(secret_key: str) -> str:
+        """Create CSRF token using secret key for verification"""
+        token = secrets.token_urlsafe(32)
+        timestamp = str(int(time.time()))
+        signature = hmac.new(
+            secret_key.encode(),
+            f"{token}:{timestamp}".encode(),
+            hashlib.sha256
+        ).hexdigest()
+        return f"{token}:{timestamp}:{signature}"
+    
+    @staticmethod
+    def verify_csrf_token(token: str, secret_key: str, max_age: int = 3600) -> bool:
+        """Verify CSRF token and check expiration"""
+        try:
+            parts = token.split(':')
+            if len(parts) != 3:
+                return False
+            
+            token_part, timestamp_str, signature = parts
+            timestamp = int(timestamp_str)
+            
+            # Check expiration
+            if time.time() - timestamp > max_age:
+                return False
+            
+            # Verify signature
+            expected_signature = hmac.new(
+                secret_key.encode(),
+                f"{token_part}:{timestamp_str}".encode(),
+                hashlib.sha256
+            ).hexdigest()
+            
+            return hmac.compare_digest(signature, expected_signature)
+            
+        except (ValueError, TypeError):
+            return False
 
 # Global security manager
 security_manager = SecurityManager()
@@ -125,3 +171,28 @@ def get_security_headers():
         "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
         "Referrer-Policy": "strict-origin-when-cross-origin"
     }
+
+def generate_csrf_token_for_request() -> str:
+    """Generate CSRF token for forms"""
+    secret_key = os.getenv("JWT_SECRET", "default-secret")
+    return security_manager.create_csrf_token_with_secret(secret_key)
+
+async def verify_csrf_token_from_form(form_data: dict) -> bool:
+    """Verify CSRF token from form data"""
+    secret_key = os.getenv("JWT_SECRET", "default-secret")
+    csrf_token = form_data.get('csrf_token')
+    
+    if not csrf_token:
+        return False
+    
+    return security_manager.verify_csrf_token(csrf_token, secret_key)
+
+def verify_csrf_token_from_headers(request: Request) -> bool:
+    """Verify CSRF token from request headers"""
+    secret_key = os.getenv("JWT_SECRET", "default-secret")
+    csrf_token = request.headers.get('X-CSRF-Token')
+    
+    if not csrf_token:
+        return False
+    
+    return security_manager.verify_csrf_token(csrf_token, secret_key)

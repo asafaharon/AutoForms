@@ -57,6 +57,7 @@ class FormSubmission:
     submitted_at: datetime = field(default_factory=datetime.utcnow)
     user_agent: Optional[str] = None
     referrer: Optional[str] = None
+    email: Optional[str] = None  # Email address if provided in form
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -66,5 +67,24 @@ class FormSubmission:
             "data": self.data,
             "submitted_at": self.submitted_at.isoformat(),
             "user_agent": self.user_agent,
-            "referrer": self.referrer
+            "referrer": self.referrer,
+            "email": self.email
+        }
+
+@dataclass
+class EmailUnsubscribe:
+    """Email unsubscribe record for legal compliance"""
+    id: str
+    email: str
+    unsubscribe_token: str
+    unsubscribed_at: datetime = field(default_factory=datetime.utcnow)
+    reason: Optional[str] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "email": self.email,
+            "unsubscribe_token": self.unsubscribe_token,
+            "unsubscribed_at": self.unsubscribed_at.isoformat(),
+            "reason": self.reason
         }

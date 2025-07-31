@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from backend.config import get_settings
-from backend.routers import generate, forms, submit, pages, creations, password_reset, admin, websocket, submissions
+from backend.routers import generate, forms, submit, pages, creations, password_reset, admin, websocket, submissions, unsubscribe
 from backend.routers import templates as template_router
 from backend.routers.auth import router as auth_router
 from backend.deps import get_current_user
@@ -14,6 +14,7 @@ from backend.services.security import validate_production_security, get_security
 from backend.services.error_handler import handle_404_error, handle_500_error, handle_general_error
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from datetime import datetime
 import os
 
 settings = get_settings()
@@ -48,7 +49,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AutoForms API", version="0.1.0", lifespan=lifespan)
 
-# טעינת תבניות וקבצים סטטיים
+# Load templates and static files
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 print("🔍 Template dir:", os.path.join(os.path.dirname(__file__), "templates"))
 
@@ -60,13 +61,13 @@ if os.path.exists(static_dir):
 else:
     print("⚠️ Static directory not found, skipping static file serving")
 
-# הרשמת ראוטרים
-app.include_router(admin.router, prefix="/admin", tags=["Admin"]) # 2. הוספת הראוטר
+# Register routers
+app.include_router(admin.router, prefix="/admin", tags=["Admin"]) # 2. Add the router
 app.include_router(password_reset.router)
 
 app.include_router(creations.router)
 
-app.include_router(auth_router)  # בלי prefix
+app.include_router(auth_router)  # Without prefix
 app.include_router(generate.router)
 
 app.include_router(forms.router)
@@ -75,6 +76,7 @@ app.include_router(pages.router)
 app.include_router(websocket.router)
 app.include_router(template_router.router)
 app.include_router(submissions.router)
+app.include_router(unsubscribe.router)
 for r in app.routes:
     # WebSocket routes don't have methods attribute
     methods = getattr(r, 'methods', {'WebSocket'})
@@ -125,7 +127,6 @@ async def health_check():
 @app.get("/health/ready", tags=["infra"])
 async def readiness_check():
     """Comprehensive readiness check for production"""
-    from datetime import datetime
     import time
     
     start_time = time.time()
@@ -177,14 +178,13 @@ async def readiness_check():
 @app.get("/health/live", tags=["infra"])
 async def liveness_check():
     """Liveness check - basic application responsiveness"""
-    from datetime import datetime
     return {
         "status": "alive",
         "timestamp": datetime.utcnow().isoformat(),
         "uptime": "running"
     }
 
-# דף בית
+# Home page
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -204,7 +204,7 @@ async def sharing_guide(request: Request):
 async def complete_demo(request: Request):
     return templates.TemplateResponse("complete_demo.html", {"request": request})
 
-# דף בדיקה
+# Test page
 @app.get("/test", response_class=HTMLResponse)
 async def test(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
@@ -281,7 +281,7 @@ async def embed_form(form_id: str, request: Request):
             content="<h1>Error</h1><p>Unable to load form.</p>",
             status_code=500
         )
-# ✅ הרצה מקומית (מותרת רק כשהקובץ נמצא בתוך backend)
+# Local execution (allowed only when file is inside backend)
 if __name__ == "__main__":
     import uvicorn
 

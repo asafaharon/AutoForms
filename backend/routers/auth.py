@@ -29,7 +29,7 @@ from backend.utils import validate_email, validate_password, validate_username, 
 
 print("🔔 auth router loaded")
 
-router = APIRouter(tags=["auth"])  # ⬅️ הסרנו את prefix="/auth"
+router = APIRouter(tags=["auth"])  # Removed prefix="/auth"
 
 BASE_DIR = Path(__file__).resolve().parent.parent     # backend/
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))

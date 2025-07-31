@@ -5,6 +5,10 @@ from bson import ObjectId
 from backend.services.pdf_service import html_to_pdf_file, html_to_text_file
 from backend.services.email_service import send_form_pdf
 from backend.services.form_generator import generate_html_only, detect_language_fast, chat_with_gpt
+from backend.services.security import generate_csrf_token_for_request
+from backend.services.db_transaction import TransactionManager
+from backend.services.input_validation import input_validator
+from backend.services.rate_limiter import api_rate_limiter
 from backend.services.websocket_manager import websocket_manager
 from backend.deps import get_current_user, get_db
 from backend.models.user import UserPublic
@@ -14,7 +18,7 @@ from backend.utils import validate_object_id
 router = APIRouter(prefix="/api")
 
 
-# ✅ פונקציית עזר אחידה לשימוש בדמו ובמשתמשים רשומים
+# Helper function for use in demo and registered users
 def build_form_response_html(generated_html: str, for_demo: bool = False) -> str:
     escaped_html = generated_html.replace('"', '&quot;')
 
@@ -92,7 +96,7 @@ def build_form_response_html(generated_html: str, for_demo: bool = False) -> str
     """
 
 
-# ✅ למשתמש רשום
+# For registered users
 @router.post("/generate", response_class=HTMLResponse)
 async def generate_html_preview(
     request: Request,
@@ -123,9 +127,25 @@ async def generate_html_preview(
 
 
 @router.post("/demo-generate", response_class=HTMLResponse)
-async def generate_demo_html(prompt: str = Form(...)):
+async def generate_demo_html(request: Request, prompt: str = Form(...)):
+    # Get client IP for rate limiting
+    client_ip = request.client.host if request.client else "unknown"
+    
+    # Check API rate limits
+    allowed, reason = api_rate_limiter.check_and_record('form_generation_per_user', f"demo_{client_ip}")
+    if not allowed:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail=reason)
+    
+    # Validate input
+    data = {'prompt': prompt}
+    is_valid, errors, sanitized_data = input_validator.validate_data(data, 'form_generation')
+    if not is_valid:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Validation errors: {'; '.join(errors)}")
+    
     start_time = datetime.now()
-    html = await generate_html_only(prompt)
+    html = await generate_html_only(sanitized_data['prompt'])
     total_time = (datetime.now() - start_time).total_seconds()
     perf_monitor.record_generation_time("demo_total", total_time, cache_hit=False)
     return HTMLResponse(content=build_form_response_html(html, for_demo=True))
@@ -133,6 +153,7 @@ async def generate_demo_html(prompt: str = Form(...)):
 
 @router.post("/save-form", response_class=HTMLResponse)
 async def save_form(
+    request: Request,
     title: str = Form(...),
     html: str = Form(...),
     prompt: str = Form(""),
@@ -140,6 +161,33 @@ async def save_form(
     user: UserPublic = Depends(get_current_user),
     db=Depends(get_db)
 ):
+    # Check API rate limits
+    allowed, reason = api_rate_limiter.check_and_record('form_generation_per_user', user.id)
+    if not allowed:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail=reason)
+    
+    # Validate input
+    data = {'title': title, 'prompt': prompt, 'language': language}
+    is_valid, errors, sanitized_data = input_validator.validate_data(data, 'form_generation')
+    if not is_valid:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Validation errors: {'; '.join(errors)}")
+    
+    # Use sanitized data
+    title = sanitized_data['title']
+    prompt = sanitized_data['prompt']
+    language = sanitized_data['language']
+    
+    # Basic HTML validation (ensure it's not empty and reasonable length)
+    if not html or len(html.strip()) < 20:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="HTML content is required and must be substantial")
+    
+    if len(html) > 1000000:  # 1MB limit
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="HTML content exceeds maximum size")
+    
     user_obj_id = validate_object_id(user.id)
     
     # Auto-detect language if not provided or if default
@@ -149,56 +197,69 @@ async def save_form(
             if detected_lang != "en":
                 language = detected_lang
     
-    # First save the form to get the ID
-    doc = {
-        "user_id": user_obj_id,
-        "title": title,
-        "html": html,
-        "prompt": prompt,
-        "language": language,
-        "created_at": datetime.utcnow(),
-    }
-    result = await db.forms.insert_one(doc)
-    form_id = str(result.inserted_id)
-    
-    # Now update the HTML to include the correct submission URL
-    import re
-    
-    # Add form submission functionality to the HTML
-    updated_html = html
-    
-    # If form doesn't have an action attribute, add one
-    if 'action=' not in updated_html:
-        # Find form tag and add action attribute
-        form_pattern = r'<form([^>]*?)>'
-        def add_action(match):
-            attrs = match.group(1)
-            return f'<form{attrs} action="/api/submissions/submit/{form_id}" method="POST">'
-        updated_html = re.sub(form_pattern, add_action, updated_html, flags=re.IGNORECASE)
-    else:
-        # Replace existing action with correct one
-        action_pattern = r'action=["\'][^"\']*["\']'
-        updated_html = re.sub(action_pattern, f'action="/api/submissions/submit/{form_id}"', updated_html, flags=re.IGNORECASE)
-    
-    # Ensure method is POST
-    if 'method=' not in updated_html:
-        updated_html = updated_html.replace('<form', '<form method="POST"', 1)
-    else:
-        method_pattern = r'method=["\'][^"\']*["\']'
-        updated_html = re.sub(method_pattern, 'method="POST"', updated_html, flags=re.IGNORECASE)
-    
-    # Add hidden form_id field if not present
-    if f'name="form_id"' not in updated_html:
-        # Find the first form tag and add the hidden input after it
-        form_start_pattern = r'(<form[^>]*?>)'
-        replacement = f'\\1\n    <input type="hidden" name="form_id" value="{form_id}">'
-        updated_html = re.sub(form_start_pattern, replacement, updated_html, flags=re.IGNORECASE)
-    
-    # Update the saved form with the corrected HTML
-    await db.forms.update_one(
-        {"_id": result.inserted_id},
-        {"$set": {"html": updated_html}}
-    )
+    # Save the form with transaction for data consistency
+    async with TransactionManager() as tm:
+        db = await tm.get_database()
+        
+        doc = {
+            "user_id": user_obj_id,
+            "title": title,
+            "html": html,
+            "prompt": prompt,
+            "language": language,
+            "created_at": datetime.utcnow(),
+            "is_active": True,
+            "submission_count": 0
+        }
+        result = await db.forms.insert_one(doc, session=tm.session)
+        form_id = str(result.inserted_id)
+        
+        # Now update the HTML to include the correct submission URL
+        import re
+        
+        # Add form submission functionality to the HTML
+        updated_html = html
+        
+        # If form doesn't have an action attribute, add one
+        if 'action=' not in updated_html:
+            # Find form tag and add action attribute
+            form_pattern = r'<form([^>]*?)>'
+            def add_action(match):
+                attrs = match.group(1)
+                return f'<form{attrs} action="/api/submissions/submit/{form_id}" method="POST">'
+            updated_html = re.sub(form_pattern, add_action, updated_html, flags=re.IGNORECASE)
+        else:
+            # Replace existing action with correct one
+            action_pattern = r'action=["\'][^"\']*["\']'
+            updated_html = re.sub(action_pattern, f'action="/api/submissions/submit/{form_id}"', updated_html, flags=re.IGNORECASE)
+        
+        # Ensure method is POST
+        if 'method=' not in updated_html:
+            updated_html = updated_html.replace('<form', '<form method="POST"', 1)
+        else:
+            method_pattern = r'method=["\'][^"\']*["\']'
+            updated_html = re.sub(method_pattern, 'method="POST"', updated_html, flags=re.IGNORECASE)
+        
+        # Add hidden form_id field if not present
+        if f'name="form_id"' not in updated_html:
+            # Find the first form tag and add hidden inputs after it
+            csrf_token = generate_csrf_token_for_request()
+            form_start_pattern = r'(<form[^>]*?>)'
+            replacement = f'\\1\n    <input type="hidden" name="form_id" value="{form_id}">\n    <input type="hidden" name="csrf_token" value="{csrf_token}">'
+            updated_html = re.sub(form_start_pattern, replacement, updated_html, flags=re.IGNORECASE)
+        elif 'name="csrf_token"' not in updated_html:
+            # Add CSRF token if form_id exists but CSRF token doesn't
+            csrf_token = generate_csrf_token_for_request()
+            form_id_pattern = r'(<input[^>]*name="form_id"[^>]*>)'
+            replacement = f'\\1\n    <input type="hidden" name="csrf_token" value="{csrf_token}">'
+            updated_html = re.sub(form_id_pattern, replacement, updated_html, flags=re.IGNORECASE)
+        
+        # Update the saved form with the corrected HTML
+        await db.forms.update_one(
+            {"_id": result.inserted_id},
+            {"$set": {"html": updated_html}},
+            session=tm.session
+        )
     
     # Send WebSocket notification
     await websocket_manager.notify_form_generated(user.id, {
@@ -264,13 +325,13 @@ async def send_form_to_other_email(
     email: str = Form(...),
     user: UserPublic = Depends(get_current_user)
 ):
-    title = "טופס שנוצר עבורך מ-AutoForms"
+    title = "Form created for you by AutoForms"
     try:
         pdf_path = html_to_pdf_file(html)
         await send_form_pdf(email, pdf_path, title)
         return HTMLResponse(status_code=200)
     except Exception as e:
-        return HTMLResponse(f"<p class='text-red-500 font-medium'>❌ נכשל: {e}</p>", status_code=500)
+        return HTMLResponse(f"<p class='text-red-500 font-medium'>❌ Failed: {e}</p>", status_code=500)
 
 
 @router.post("/download-pdf")

@@ -60,9 +60,9 @@ async def reset_password_post(
         payload = decode_token(token)
         user_id = payload.get("sub")
         if not user_id:
-            raise HTTPException(400, "טוקן לא תקין")
+            raise HTTPException(400, "Invalid token")
     except Exception:
-        raise HTTPException(400, "טוקן פג תוקף או לא תקין")
+        raise HTTPException(400, "Token expired or invalid")
 
     hashed = hash_password(password)
     await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"hashed_password": hashed}})

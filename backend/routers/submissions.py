@@ -13,6 +13,10 @@ from backend.deps import get_current_user
 from backend.models.form_models import FormSubmission
 from backend.services.email_service import send_submission_notification
 from backend.services.form_generator import detect_language_fast
+from backend.services.security import verify_csrf_token_from_form
+from backend.services.db_transaction import TransactionManager
+from backend.services.input_validation import input_validator
+from backend.services.rate_limiter import api_rate_limiter
 
 router = APIRouter(prefix="/api/submissions", tags=["submissions"])
 
@@ -29,6 +33,14 @@ async def submit_form(
     try:
         db = await get_db()
         
+        # Get client IP for rate limiting
+        client_ip = request.client.host if request.client else "unknown"
+        
+        # Check submission rate limits
+        allowed, reason = api_rate_limiter.check_and_record('form_submission', client_ip)
+        if not allowed:
+            raise HTTPException(status_code=429, detail=reason)
+        
         # Get form data from request body
         try:
             # Try JSON first
@@ -37,6 +49,19 @@ async def submit_form(
             # Fallback to form-encoded data
             form_body = await request.form()
             form_data = dict(form_body)
+            
+            # Verify CSRF token for form submissions (skip for demo/fallback forms)
+            if form_id not in ["demo-form-123", "fallback-contact", "fallback-registration", "fallback-feedback", "fallback-survey", "fallback-general"]:
+                if not await verify_csrf_token_from_form(form_data):
+                    raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+        
+        # Validate and sanitize form data
+        is_valid, errors, sanitized_form_data = input_validator.validate_form_data(form_data)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=f"Form validation errors: {'; '.join(errors)}")
+        
+        # Use sanitized data for further processing
+        form_data = sanitized_form_data
         
         # Handle demo and fallback forms specially
         if form_id in ["demo-form-123", "fallback-contact", "fallback-registration", "fallback-feedback", "fallback-survey", "fallback-general"]:
@@ -105,23 +130,29 @@ async def submit_form(
             referrer=request.headers.get("referer")
         )
         
-        # Save submission to database
-        await db.form_submissions.insert_one(submission.to_dict())
-        
-        # Update form submission count
-        try:
-            # Try as ObjectId first (for forms saved with _id)
-            form_obj_id = ObjectId(form_id)
-            await db.forms.update_one(
-                {"_id": form_obj_id},
-                {"$inc": {"submission_count": 1}}
-            )
-        except InvalidId:
-            # Fallback to string id for older forms
-            await db.forms.update_one(
-                {"id": form_id},
-                {"$inc": {"submission_count": 1}}
-            )
+        # Save submission and update form count with transaction
+        async with TransactionManager() as tm:
+            transaction_db = await tm.get_database()
+            
+            # Save submission to database
+            await transaction_db.form_submissions.insert_one(submission.to_dict(), session=tm.session)
+            
+            # Update form submission count
+            try:
+                # Try as ObjectId first (for forms saved with _id)
+                form_obj_id = ObjectId(form_id)
+                await transaction_db.forms.update_one(
+                    {"_id": form_obj_id},
+                    {"$inc": {"submission_count": 1}},
+                    session=tm.session
+                )
+            except InvalidId:
+                # Fallback to string id for older forms
+                await transaction_db.forms.update_one(
+                    {"id": form_id},
+                    {"$inc": {"submission_count": 1}},
+                    session=tm.session
+                )
         
         # Send email notification in background
         try:

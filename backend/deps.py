@@ -9,11 +9,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# 1. ייבוא המודל الصحيح
+# 1. Import the correct model
 from backend.models.user import UserPublic
 
 
-# 2. עדכון הפונקציה כדי שתחזיר מודל Pydantic
+# 2. Update function to return Pydantic model
 async def get_current_user(token: str | None = Cookie(None), db=Depends(get_db)) -> UserPublic:
     if token is None:
         raise HTTPException(
@@ -55,21 +55,21 @@ async def get_current_user(token: str | None = Cookie(None), db=Depends(get_db))
     if user_doc is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-    # המרת הנתונים ממסד הנתונים למודל UserPublic
+    # Convert database data to UserPublic model
     return UserPublic(
         id=str(user_doc["_id"]),
         username=user_doc["username"],
         email=user_doc["email"],
         created_at=user_doc["created_at"],
-        is_admin=user_doc.get("is_admin", False)  # .get() בטוח יותר
+        is_admin=user_doc.get("is_admin", False)  # .get() is safer
     )
 
 
-# 3. עדכון התלות של האדמין
+# 3. Update admin dependency
 async def get_current_admin_user(current_user: UserPublic = Depends(get_current_user)) -> UserPublic:
     """
-    תלות שבודקת אם המשתמש המחובר הוא מנהל מערכת.
-    אם לא, היא זורקת שגיאת 403 Forbidden.
+    Dependency that checks if the current user is a system administrator.
+    If not, it raises a 403 Forbidden error.
     """
     if not current_user.is_admin:
         raise HTTPException(

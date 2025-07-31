@@ -34,4 +34,4 @@ async def send_creation_pdf(
                 pass
 
     tasks.add_task(task)
-    return {"msg": "PDF נשלח למייל 🎉"}
+    return {"msg": "PDF sent to email 🎉"}
