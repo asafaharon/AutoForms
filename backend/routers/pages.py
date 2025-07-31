@@ -109,6 +109,6 @@ async def dashboard_page(
     request: Request,
     user: UserPublic = Depends(get_current_user)
 ):
-    # Redirect to submissions dashboard for now
+    # Redirect to home dashboard
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/submissions", status_code=302)
+    return RedirectResponse(url="/home", status_code=302)

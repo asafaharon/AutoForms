@@ -73,24 +73,29 @@ class SecurityManager:
         return errors
     
     def rate_limit_check(self, request: Request, max_requests: int = 100, window_seconds: int = 3600) -> bool:
-        """Simple in-memory rate limiting"""
-        # Get client IP
-        client_ip = request.client.host if request.client else "unknown"
+        """Simple in-memory rate limiting based on session"""
+        # Get client identifier from session or generate one
+        client_id = "anonymous"
+        if hasattr(request.state, 'user') and request.state.user:
+            client_id = f"user_{request.state.user.id}"
+        elif hasattr(request, 'session') and request.session.get('session_id'):
+            client_id = f"session_{request.session['session_id']}"
+        
         current_time = time.time()
         
         # Clean old entries
         cutoff_time = current_time - window_seconds
-        self.rate_limit_storage[client_ip] = [
-            timestamp for timestamp in self.rate_limit_storage[client_ip] 
+        self.rate_limit_storage[client_id] = [
+            timestamp for timestamp in self.rate_limit_storage[client_id] 
             if timestamp > cutoff_time
         ]
         
         # Check rate limit
-        if len(self.rate_limit_storage[client_ip]) >= max_requests:
+        if len(self.rate_limit_storage[client_id]) >= max_requests:
             return False
         
         # Add current request
-        self.rate_limit_storage[client_ip].append(current_time)
+        self.rate_limit_storage[client_id].append(current_time)
         return True
 
 # Global security manager

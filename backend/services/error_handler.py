@@ -53,7 +53,6 @@ class ErrorHandler:
             context.update({
                 "url": str(request.url),
                 "method": request.method,
-                "client_ip": request.client.host if request.client else "unknown",
                 "user_agent": request.headers.get("user-agent", "unknown")
             })
         
