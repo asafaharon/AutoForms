@@ -23,7 +23,8 @@
       "Bash(do python3 -m py_compile \"$file\")",
       "Bash(echo:*)",
       "Bash(done)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }
