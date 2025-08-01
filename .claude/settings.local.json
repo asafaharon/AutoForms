@@ -24,7 +24,10 @@
       "Bash(echo:*)",
       "Bash(done)",
       "Bash(grep:*)",
-      "Bash(touch:*)"
+      "Bash(PYTHONPATH=. .venv/Scripts/python.exe -c \"\nimport sys\nsys.path.append(''.'')\nfrom backend.services.form_generator import generate_fallback_form\nprint(''Testing fallback form generation...'')\nresult = generate_fallback_form(''create a contact form'')\nprint(''✅ Fallback form generation works'')\nprint(f''Generated form length: {len(result)} characters'')\n\")",
+      "Bash(PYTHONPATH=. .venv/Scripts/python.exe -c \"\nimport sys\nsys.path.append(''.'')\nfrom backend.services.form_generator import generate_fallback_form\nprint(''Testing fallback form generation...'')\nresult = generate_fallback_form(''create a contact form'')\nprint(''SUCCESS: Fallback form generation works'')\nprint(f''Generated form length: {len(result)} characters'')\n\")",
+      "Bash(PYTHONPATH=. .venv/Scripts/python.exe -c \"\nfrom backend.services.form_generator import generate_fallback_form\nprint(''Testing fallback form generation...'')\nresult = generate_fallback_form(''create a contact form'')\nprint(''SUCCESS: Fallback form generation works'')\nprint(f''Generated form length: {len(result)} characters'')\n\")",
+      "Bash(PYTHONPATH=. .venv/Scripts/python.exe -c \"\nfrom backend.main import app\nprint(''SUCCESS: Main application imports correctly'')\nprint(''FastAPI app created successfully'')\n\")"
     ],
     "deny": []
   }

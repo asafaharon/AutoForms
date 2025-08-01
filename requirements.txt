@@ -32,7 +32,9 @@ bcrypt>=4.1.2
 # File uploads and form handling
 python-multipart==0.0.6
 
-# Caching removed - Redis dependency eliminated for simpler deployment
+# Caching (Redis)
+redis>=4.5.0
+hiredis>=2.2.0  # High performance Redis parser
 
 # Production performance optimizations (Linux/Mac only)
 uvloop>=0.17.0; sys_platform != "win32"  # High performance event loop

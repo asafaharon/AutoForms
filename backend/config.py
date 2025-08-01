@@ -58,8 +58,9 @@ class Settings:
         self.jwt_secret = os.getenv("JWT_SECRET", "test-jwt-secret")
         self._admin_emails_raw = os.getenv("ADMIN_EMAILS", "")
         
-        # Caching configuration (Redis removed, using in-memory cache)
-        self.cache_enabled = os.getenv("CACHE_ENABLED", "true").lower() == "true"
+        # Redis configuration
+        self.redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        self.redis_enabled = os.getenv("REDIS_ENABLED", "true").lower() == "true"
         
         # Cache settings
         self.cache_ttl_form_generation = int(os.getenv("CACHE_TTL_FORM_GENERATION", "1800"))  # 30 minutes
@@ -106,13 +107,13 @@ class Settings:
         
         # Print warnings
         if warnings:
-            print("⚠️ Configuration warnings:")
+            print("WARNING: Configuration warnings:")
             for warning in warnings:
                 print(f"   - {warning}")
         
         # Handle errors
         if errors:
-            print("❌ Configuration errors:")
+            print("ERROR: Configuration errors:")
             for error in errors:
                 print(f"   - {error}")
             print("\nPlease fix these configuration issues before running the application.")

@@ -25,7 +25,7 @@ client = openai.AsyncOpenAI(
 
 def generate_fallback_form(prompt: str) -> str:
     """Generate a simple fallback form when OpenAI is unavailable"""
-    print(f"🛠️ Generating fallback form for: {prompt[:30]}...")
+    print(f"FALLBACK: Generating fallback form for: {prompt[:30]}...")
     
     # Detect common form types from the prompt
     prompt_lower = prompt.lower()
@@ -377,11 +377,11 @@ async def generate_html_only(prompt: str, lang: str = None) -> str:
     if not lang:
         lang = detect_language_fast(prompt)
     
-    # Check memory cache first
-    from backend.services.memory_cache import cache
+    # Check Redis cache first
+    from backend.services.redis_cache import cache
     cached_result = await cache.get_cached_form(prompt, lang)
     if cached_result:
-        print(f"🎯 Memory cache hit for prompt: {prompt[:30]}...")
+        print(f"🎯 Redis cache hit for prompt: {prompt[:30]}...")
         return cached_result["html"]
     
     # Classify the request type

@@ -24,26 +24,14 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 AutoForms API starting up...")
     
-    try:
-        # Test database connection first
-        from backend.db import get_db
-        db = await get_db()
-        await db.command('ping')
-        print("✅ Database connection successful")
-    except Exception as e:
-        print(f"❌ Database connection failed: {e}")
-        if settings.app_env == "production":
-            raise SystemExit(1)
-    
     # Validate production security
-    try:
-        security_errors = validate_production_security()
-        if security_errors and settings.app_env == "production":
-            print("❌ Security validation failed in production mode")
-            for error in security_errors:
-                print(f"   {error}")
-    except Exception as e:
-        print(f"⚠️ Security validation error: {e}")
+    security_errors = validate_production_security()
+    if security_errors and settings.app_env == "production":
+        print("❌ Security validation failed in production mode")
+        for error in security_errors:
+            print(f"   {error}")
+        # Don't exit in development, just warn
+        # sys.exit(1)  # Uncomment for strict production enforcement
     
     try:
         from backend.services.db_indexes import create_indexes
@@ -57,10 +45,7 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     print("🔄 AutoForms API shutting down...")
-    try:
-        await close_db_connection()
-    except Exception as e:
-        print(f"⚠️ Error during shutdown: {e}")
+    await close_db_connection()
 
 app = FastAPI(title="AutoForms API", version="0.1.0", lifespan=lifespan)
 
@@ -134,7 +119,6 @@ async def general_exception_handler(request, exc):
     return handle_500_error(request, exc)
 
 # Health Check Endpoints
-@app.get("/health", tags=["infra"])
 @app.get("/healthz", tags=["infra"])
 async def health_check():
     """Basic health check for load balancers"""
@@ -154,8 +138,8 @@ async def readiness_check():
     
     # Database connectivity check
     try:
-        from backend.db import get_db
-        db = await get_db()
+        from backend.db import get_database
+        db = get_database()
         await db.command("ping")
         checks["checks"]["database"] = {"status": "healthy", "message": "Connected"}
     except Exception as e:
