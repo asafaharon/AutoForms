@@ -167,9 +167,9 @@ async def save_form(
         from fastapi import HTTPException
         raise HTTPException(status_code=429, detail=reason)
     
-    # Validate input
+    # Validate input using form_saving rules (allows empty prompt)
     data = {'title': title, 'prompt': prompt, 'language': language}
-    is_valid, errors, sanitized_data = input_validator.validate_data(data, 'form_generation')
+    is_valid, errors, sanitized_data = input_validator.validate_data(data, 'form_saving')
     if not is_valid:
         from fastapi import HTTPException
         raise HTTPException(status_code=400, detail=f"Validation errors: {'; '.join(errors)}")

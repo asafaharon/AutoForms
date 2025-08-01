@@ -57,6 +57,25 @@ class InputValidator:
             )
         },
         
+        'form_saving': {
+            'title': ValidationRule(
+                required=True,
+                min_length=3,
+                max_length=200,
+                pattern='safe_html'
+            ),
+            'prompt': ValidationRule(
+                required=False,
+                min_length=0,
+                max_length=2000
+            ),
+            'language': ValidationRule(
+                required=False,
+                pattern='language_code',
+                allowed_values=['en', 'he', 'es', 'fr', 'de']
+            )
+        },
+        
         'form_submission': {
             'form_id': ValidationRule(
                 required=True,
