@@ -13,7 +13,7 @@ import mongomock
 # Set testing environment
 os.environ["TESTING"] = "true"
 os.environ["MONGODB_URL"] = "mongodb://localhost:27017/autoforms_test"
-os.environ["OPENAI_API_KEY"] = "sk-test-key"
+os.environ["OPENAI_KEY"] = "sk-test-key"
 os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only"
 
 from backend.main import app
