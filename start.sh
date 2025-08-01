@@ -35,7 +35,7 @@ async def test_db():
     try:
         from backend.db import get_db
         db = await get_db()
-        await db.admin.command('ping')
+        await db.command('ping')
         print('✅ Database connection successful')
         return True
     except Exception as e:

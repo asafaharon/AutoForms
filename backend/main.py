@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
         # Test database connection first
         from backend.db import get_db
         db = await get_db()
-        await db.admin.command('ping')
+        await db.command('ping')
         print("✅ Database connection successful")
     except Exception as e:
         print(f"❌ Database connection failed: {e}")
@@ -154,8 +154,8 @@ async def readiness_check():
     
     # Database connectivity check
     try:
-        from backend.db import get_database
-        db = get_database()
+        from backend.db import get_db
+        db = await get_db()
         await db.command("ping")
         checks["checks"]["database"] = {"status": "healthy", "message": "Connected"}
     except Exception as e:
