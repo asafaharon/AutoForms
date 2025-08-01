@@ -377,11 +377,11 @@ async def generate_html_only(prompt: str, lang: str = None) -> str:
     if not lang:
         lang = detect_language_fast(prompt)
     
-    # Check Redis cache first
-    from backend.services.redis_cache import cache
+    # Check memory cache first
+    from backend.services.memory_cache import cache
     cached_result = await cache.get_cached_form(prompt, lang)
     if cached_result:
-        print(f"🎯 Redis cache hit for prompt: {prompt[:30]}...")
+        print(f"🎯 Memory cache hit for prompt: {prompt[:30]}...")
         return cached_result["html"]
     
     # Classify the request type

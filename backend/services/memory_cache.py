@@ -1,43 +1,22 @@
 """
-Redis caching service for improved performance
+In-memory caching service replacement for Redis
 """
-import redis
 import json
 import hashlib
-from typing import Any, Optional, Union
+import time
+from typing import Any, Optional, Union, Dict
 from datetime import datetime, timedelta
-from backend.config import get_settings
-
-settings = get_settings()
+from threading import Lock
 
 
-class RedisCache:
-    """Redis cache manager"""
+class MemoryCache:
+    """Simple in-memory cache manager to replace Redis"""
     
     def __init__(self):
-        self.redis_client = None
-        self.enabled = False
-        self._initialize_redis()
-    
-    def _initialize_redis(self):
-        """Initialize Redis connection"""
-        try:
-            if hasattr(settings, 'redis_url') and settings.redis_url:
-                self.redis_client = redis.from_url(
-                    settings.redis_url,
-                    decode_responses=True,
-                    socket_connect_timeout=5,
-                    socket_timeout=5
-                )
-                # Test connection
-                self.redis_client.ping()
-                self.enabled = True
-                print("✅ Redis cache initialized successfully")
-            else:
-                print("ℹ️ Redis URL not configured, caching disabled")
-        except Exception as e:
-            print(f"⚠️ Redis initialization failed: {e}")
-            self.enabled = False
+        self._cache: Dict[str, Dict] = {}
+        self._lock = Lock()
+        self.enabled = True
+        print("✅ Memory cache initialized successfully")
     
     def _generate_key(self, prefix: str, data: Union[str, dict]) -> str:
         """Generate cache key from data"""
@@ -49,18 +28,40 @@ class RedisCache:
         hash_obj = hashlib.md5(data_str.encode())
         return f"{prefix}:{hash_obj.hexdigest()}"
     
+    def _is_expired(self, item: Dict) -> bool:
+        """Check if cache item is expired"""
+        if 'expires_at' not in item:
+            return False
+        return time.time() > item['expires_at']
+    
+    def _cleanup_expired(self):
+        """Remove expired items from cache"""
+        current_time = time.time()
+        expired_keys = [
+            key for key, item in self._cache.items() 
+            if 'expires_at' in item and current_time > item['expires_at']
+        ]
+        for key in expired_keys:
+            del self._cache[key]
+    
     async def get(self, key: str) -> Optional[Any]:
         """Get value from cache"""
         if not self.enabled:
             return None
         
         try:
-            value = self.redis_client.get(key)
-            if value:
-                return json.loads(value)
-            return None
+            with self._lock:
+                if key not in self._cache:
+                    return None
+                
+                item = self._cache[key]
+                if self._is_expired(item):
+                    del self._cache[key]
+                    return None
+                
+                return item['value']
         except Exception as e:
-            print(f"❌ Redis get error: {e}")
+            print(f"❌ Memory cache get error: {e}")
             return None
     
     async def set(self, key: str, value: Any, ttl: int = 3600):
@@ -69,11 +70,20 @@ class RedisCache:
             return False
         
         try:
-            serialized_value = json.dumps(value, default=str)
-            self.redis_client.setex(key, ttl, serialized_value)
-            return True
+            with self._lock:
+                # Periodic cleanup
+                if len(self._cache) % 100 == 0:
+                    self._cleanup_expired()
+                
+                expires_at = time.time() + ttl if ttl > 0 else None
+                self._cache[key] = {
+                    'value': value,
+                    'expires_at': expires_at,
+                    'created_at': time.time()
+                }
+                return True
         except Exception as e:
-            print(f"❌ Redis set error: {e}")
+            print(f"❌ Memory cache set error: {e}")
             return False
     
     async def delete(self, key: str):
@@ -82,24 +92,30 @@ class RedisCache:
             return False
         
         try:
-            self.redis_client.delete(key)
-            return True
+            with self._lock:
+                if key in self._cache:
+                    del self._cache[key]
+                return True
         except Exception as e:
-            print(f"❌ Redis delete error: {e}")
+            print(f"❌ Memory cache delete error: {e}")
             return False
     
     async def clear_pattern(self, pattern: str):
-        """Clear all keys matching pattern"""
+        """Clear all keys matching pattern (simple prefix matching)"""
         if not self.enabled:
             return False
         
         try:
-            keys = self.redis_client.keys(pattern)
-            if keys:
-                self.redis_client.delete(*keys)
-            return True
+            with self._lock:
+                keys_to_delete = [
+                    key for key in self._cache.keys() 
+                    if key.startswith(pattern.replace('*', ''))
+                ]
+                for key in keys_to_delete:
+                    del self._cache[key]
+                return True
         except Exception as e:
-            print(f"❌ Redis clear pattern error: {e}")
+            print(f"❌ Memory cache clear pattern error: {e}")
             return False
     
     async def cache_form_generation(self, prompt: str, lang: str, html: str, ttl: int = 1800):
@@ -158,28 +174,26 @@ class RedisCache:
     
     def get_stats(self) -> dict:
         """Get cache statistics"""
-        if not self.enabled:
-            return {"enabled": False, "message": "Redis not available"}
-        
         try:
-            info = self.redis_client.info()
-            return {
-                "enabled": True,
-                "connected_clients": info.get("connected_clients", 0),
-                "used_memory": info.get("used_memory_human", "N/A"),
-                "keyspace_hits": info.get("keyspace_hits", 0),
-                "keyspace_misses": info.get("keyspace_misses", 0),
-                "hit_ratio": round(
-                    info.get("keyspace_hits", 0) / 
-                    max(info.get("keyspace_hits", 0) + info.get("keyspace_misses", 0), 1) * 100, 2
-                )
-            }
+            with self._lock:
+                total_items = len(self._cache)
+                expired_items = sum(1 for item in self._cache.values() if self._is_expired(item))
+                active_items = total_items - expired_items
+                
+                return {
+                    "enabled": True,
+                    "type": "memory",
+                    "total_items": total_items,
+                    "active_items": active_items,
+                    "expired_items": expired_items,
+                    "memory_usage": "In-memory storage"
+                }
         except Exception as e:
             return {"enabled": False, "error": str(e)}
 
 
 # Global cache instance
-cache = RedisCache()
+cache = MemoryCache()
 
 
 # Decorator for caching function results
@@ -190,7 +204,7 @@ def cache_result(ttl: int = 3600, key_prefix: str = "func"):
             # Generate cache key from function name and arguments
             cache_key = cache._generate_key(
                 f"{key_prefix}:{func.__name__}",
-                {"args": args, "kwargs": kwargs}
+                {"args": str(args), "kwargs": str(kwargs)}
             )
             
             # Try to get from cache
