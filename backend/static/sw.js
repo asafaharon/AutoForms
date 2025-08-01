@@ -12,7 +12,6 @@ const STATIC_ASSETS = [
   '/home',
   '/static/manifest.json',
   '/static/js/websocket-client.js',
-  '/static/css/app.css',
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/htmx.org@1.9.2',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap',

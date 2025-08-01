@@ -18,7 +18,12 @@
       "Bash(git commit:*)",
       "Bash(git config:*)",
       "Bash(git remote get-url:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(for:*)",
+      "Bash(do python3 -m py_compile \"$file\")",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }
