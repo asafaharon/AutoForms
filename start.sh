@@ -16,8 +16,8 @@ if [ -z "$MONGODB_URI" ]; then
     exit 1
 fi
 
-if [ -z "$OPENAI_API_KEY" ]; then
-    echo "❌ OPENAI_API_KEY environment variable is required"
+if [ -z "$OPENAI_KEY" ]; then
+    echo "❌ OPENAI_KEY environment variable is required"
     exit 1
 fi
 
