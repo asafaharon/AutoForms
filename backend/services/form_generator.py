@@ -864,12 +864,23 @@ async def save_form(
     print(f"💾 Saving form for user: {user_id}")
     start_time = datetime.now()
     
+    # Extract title from schema if available, otherwise use default
+    title = schema.get('title', 'Generated Form')
+    prompt = schema.get('prompt', '')
+    
+    # Use the current Form model structure - convert user_id to ObjectId if needed
+    from backend.utils import validate_object_id
+    user_obj_id = validate_object_id(user_id) if isinstance(user_id, str) else user_id
+    
     doc = {
-        "user_id": user_id,
-        "schema": schema,
+        "user_id": user_obj_id,
+        "title": title,
         "html": html,
-        "model_version": settings.openai_model,
+        "prompt": prompt,
+        "language": "en",
         "created_at": datetime.utcnow(),
+        "is_active": True,
+        "submission_count": 0
     }
     
     try:
@@ -889,6 +900,19 @@ async def save_form(
 async def create_form_for_user(prompt: str, lang: str, user_id) -> tuple[str, str, str]:
     """מחזירה form_id, html, embed"""
     schema, html = await generate_schema_and_html(prompt, lang)
+    
+    # Add missing fields to schema to match Form model
+    if isinstance(schema, dict):
+        schema['prompt'] = prompt
+        if 'title' not in schema:
+            schema['title'] = f"Generated Form - {prompt[:30]}..."
+    else:
+        # If schema isn't a dict, create a proper one
+        schema = {
+            'title': f"Generated Form - {prompt[:30]}...",
+            'prompt': prompt
+        }
+    
     db = await get_db()
     form_id = await save_form(db, user_id, schema, html)
     embed = f'<iframe src="{settings.base_url}/forms/{form_id}" width="100%"></iframe>'
