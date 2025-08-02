@@ -68,7 +68,7 @@ def build_form_response_html(generated_html: str, for_demo: bool = False) -> str
         </div>
         <div class="border border-slate-200 rounded-lg overflow-hidden">
             <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 text-xs font-semibold text-slate-500">Preview</div>
-            <div id="result" class="p-4 bg-white max-h-[50vh] overflow-y-auto">{generated_html}</div>
+            <div id="result" class="p-4 bg-white min-h-[200px] max-h-[80vh] overflow-y-auto break-words">{generated_html}</div>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
