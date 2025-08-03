@@ -213,6 +213,11 @@ async def home(request: Request, user=Depends(get_current_user)):
     return templates.TemplateResponse("home.html",
                                       {"request": request, "user": user})
 
+@app.get("/developer", response_class=HTMLResponse)
+async def developer_profile(request: Request):
+    """Developer profile page showcasing Asaf Aharon"""
+    return templates.TemplateResponse("developer.html", {"request": request})
+
 @app.get("/embed/{form_id}", response_class=HTMLResponse)
 async def embed_form(form_id: str, request: Request):
     """Standalone form page for iframe embedding"""
