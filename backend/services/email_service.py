@@ -234,7 +234,17 @@ async def send_submission_notification(to_email: str, submission: FormSubmission
         data_html = ""
         data_text = ""
         
+        # Filter out technical fields that users shouldn't see
+        technical_fields = {
+            'form_id', 'csrf_token', 'form-id', 'csrf-token', 
+            '_token', '_csrf', 'token', 'authenticity_token'
+        }
+        
         for field, value in submission.data.items():
+            # Skip technical fields
+            if field.lower() in technical_fields:
+                continue
+                
             # Clean field name for display
             field_display = field.replace("_", " ").title()
             
