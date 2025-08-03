@@ -180,9 +180,6 @@ def get_email_translations(language: str = "en") -> dict:
             "form_label": "Form:",
             "submitted_label": "Submitted:",
             "form_data_title": "📝 Form Data:",
-            "submission_details_title": "Submission Details:",
-            "user_agent_label": "User Agent:",
-            "referrer_label": "Referrer:",
             "dashboard_button": "View Dashboard",
             "unknown": "Unknown",
             "direct": "Direct",
@@ -196,9 +193,6 @@ def get_email_translations(language: str = "en") -> dict:
             "form_label": "טופס:",
             "submitted_label": "הוגש בתאריך:",
             "form_data_title": "📝 נתוני הטופס:",
-            "submission_details_title": "פרטי ההגשה:",
-            "user_agent_label": "דפדפן:",
-            "referrer_label": "מקור:",
             "dashboard_button": "צפה בלוח הבקרה",
             "unknown": "לא ידוע",
             "direct": "ישיר",
@@ -257,10 +251,6 @@ async def send_submission_notification(to_email: str, submission: FormSubmission
 {t["form_data_title"].replace('📝 ', '')}
 {data_text}
 
-{t["submission_details_title"]}
-- {t["user_agent_label"]} {submission.user_agent or t["unknown"]}
-- {t["referrer_label"]} {submission.referrer or t["direct"]}
-
 {t["view_dashboard_text"]}
 
 {t["signature"]}
@@ -298,11 +288,6 @@ async def send_submission_notification(to_email: str, submission: FormSubmission
                         </table>
                     </div>
                     
-                    <div class="meta">
-                        <strong>{t["submission_details_title"]}</strong><br>
-                        {t["user_agent_label"]} {html.escape(submission.user_agent or t["unknown"])}<br>
-                        {t["referrer_label"]} {html.escape(submission.referrer or t["direct"])}
-                    </div>
                     
                     <p style="margin-top: 20px;">
                         <a href="#" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">

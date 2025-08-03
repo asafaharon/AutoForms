@@ -81,8 +81,8 @@ async def submit_form(
                 form_title=form_titles.get(form_id, "Demo Form"),
                 data=form_data,
                 submitted_at=datetime.utcnow(),
-                    user_agent=request.headers.get("user-agent"),
-                referrer=request.headers.get("referer")
+                user_agent=None,
+                referrer=None
             )
             
             # For demo/fallback forms, just log it instead of saving to database
@@ -126,8 +126,8 @@ async def submit_form(
             form_title=form_doc.get("title", "Untitled Form"),
             data=form_data,
             submitted_at=datetime.utcnow(),
-            user_agent=request.headers.get("user-agent"),
-            referrer=request.headers.get("referer")
+            user_agent=None,
+            referrer=None
         )
         
         # Save submission and update form count with transaction
