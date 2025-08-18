@@ -49,13 +49,17 @@ def build_form_response_html(generated_html: str, for_demo: bool = False) -> str
         </form>
         """
     else:
-        # For demo users, show a login prompt instead of the email form
+        # For demo users, show enhanced call-to-action
         email_form_html = f"""
-        <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p class="text-blue-800 font-medium mb-2">📧 Want to send forms via email?</p>
-            <a href="/register" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
-                Create Free Account
-            </a>
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+            <div class="text-center">
+                <div class="text-2xl mb-2">🚀</div>
+                <p class="text-blue-800 font-semibold mb-1 text-sm">Love what you see?</p>
+                <p class="text-blue-600 text-xs mb-3">Get sharing, analytics & email notifications</p>
+                <a href="/register" class="inline-flex items-center bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition text-sm shadow-md hover:shadow-lg transform hover:scale-105">
+                    <span class="mr-1">✨</span> Upgrade Free
+                </a>
+            </div>
         </div>
         """
 

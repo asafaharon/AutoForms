@@ -171,18 +171,25 @@
                         
                         <div class="relative">
                             <label class="block text-lg font-semibold text-slate-700 mb-3">
-                                What kind of form do you need?
+                                <span class="flex items-center">
+                                    <span class="text-2xl mr-2">🎯</span>
+                                    What kind of form do you need?
+                                </span>
                             </label>
-                            <input type="text" 
-                                   name="prompt" 
-                                   required 
-                                   placeholder="e.g., 'Contact form for my restaurant' or 'Event registration with RSVP options'"
-                                   class="w-full p-4 text-lg border-2 border-slate-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 bg-white shadow-sm"
-                                   autocomplete="off" />
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
+                            <div class="relative">
+                                <input type="text" 
+                                       name="prompt" 
+                                       required 
+                                       placeholder="e.g., 'Contact form for my restaurant' or 'Wedding RSVP with meal options'"
+                                       class="w-full p-4 text-lg border-2 border-slate-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 bg-white shadow-sm pr-12"
+                                       autocomplete="off" />
+                                <div class="absolute right-4 top-1/2 transform -translate-y-1/2">
+                                    <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
@@ -224,24 +231,67 @@
             </div>
         </div>
 
-        <!-- Loading State -->
+        <!-- Enhanced Loading State -->
         <div id="loader" 
              style="display: none;" 
-             class="fixed top-6 right-6 bg-white shadow-xl px-6 py-4 rounded-xl text-base text-slate-700 border border-blue-300 z-50">
-            <div class="flex items-center">
-                <svg class="animate-spin h-5 w-5 mr-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                🤖 AI is creating your form...
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 text-center">
+                <div class="mb-6">
+                    <div class="w-16 h-16 mx-auto mb-4 relative">
+                        <div class="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
+                        <div class="absolute inset-0 border-4 border-blue-600 rounded-full animate-spin border-t-transparent"></div>
+                        <div class="absolute inset-2 bg-blue-50 rounded-full flex items-center justify-center">
+                            <span class="text-2xl">🤖</span>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2" id="loading-title">🚀 Creating Your Form</h3>
+                    <p class="text-slate-600 text-sm" id="loading-message">AI is analyzing your request and building a beautiful form...</p>
+                </div>
+                
+                <!-- Progress Steps -->
+                <div class="space-y-2 mb-6">
+                    <div class="flex items-center justify-between text-xs">
+                        <span id="step-1" class="flex items-center text-blue-600">
+                            <div class="w-2 h-2 bg-blue-600 rounded-full mr-2 animate-pulse"></div>
+                            Analyzing prompt
+                        </span>
+                        <span class="text-slate-400">1/3</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-1">
+                        <div id="progress-bar" class="bg-blue-600 h-1 rounded-full transition-all duration-1000" style="width: 33%"></div>
+                    </div>
+                </div>
+                
+                <!-- Fun Facts -->
+                <div class="text-xs text-slate-500 italic" id="loading-tip">
+                    💡 Tip: AutoForms supports Hebrew, English, and 3 other languages!
+                </div>
             </div>
         </div>
 
         <!-- Preview Section -->
         <div id="preview-wrapper" class="max-w-5xl mx-auto mt-12 hidden">
-            <div class="text-center mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-2">🎉 Your Form is Ready!</h3>
-                <p class="text-slate-600">Here's your beautiful, fully functional form:</p>
+            <!-- Success Animation -->
+            <div class="text-center mb-8 bounce-in">
+                <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                    <span class="text-3xl text-white">✨</span>
+                </div>
+                <h3 class="text-3xl font-bold text-slate-800 mb-2">🎉 Your Form is Ready!</h3>
+                <p class="text-slate-600 text-lg">Here's your beautiful, fully functional form - try it out!</p>
+                <div class="mt-4 flex justify-center items-center space-x-4 text-sm text-slate-500">
+                    <span class="flex items-center">
+                        <div class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></div>
+                        Live & Working
+                    </span>
+                    <span class="flex items-center">
+                        <div class="w-2 h-2 bg-blue-500 rounded-full mr-1"></div>
+                        Mobile Responsive
+                    </span>
+                    <span class="flex items-center">
+                        <div class="w-2 h-2 bg-purple-500 rounded-full mr-1"></div>
+                        Collecting Data
+                    </span>
+                </div>
             </div>
             
             <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
@@ -264,30 +314,54 @@
                 </div>
             </div>
             
-            <!-- Next Steps -->
-            <div class="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 border border-blue-200">
-                <div class="text-center mb-6">
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">🚀 What's Next?</h4>
-                    <p class="text-slate-600">Your form is working and ready to collect real data!</p>
+            <!-- Action Buttons -->
+            <div class="mt-8 space-y-6">
+                <!-- Primary Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button onclick="scrollToTop()" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                        🔄 Try Another Form
+                    </button>
+                    <button onclick="downloadCurrentForm()" class="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                        📄 Download PDF
+                    </button>
+                    <a href="/register" class="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 text-center">
+                        🚀 Get Full Features
+                    </a>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                        <div class="text-2xl mb-3">📱</div>
-                        <h5 class="font-semibold text-slate-800 mb-2">Share Instantly</h5>
-                        <p class="text-sm text-slate-600 mb-4">Get a shareable link, embed code, or QR code to start collecting responses immediately.</p>
-                        <a href="/register" class="inline-flex items-center text-blue-600 font-medium text-sm hover:text-blue-700">
-                            Sign up to share →
-                        </a>
+
+                <!-- Next Steps -->
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200">
+                    <div class="text-center mb-6">
+                        <h4 class="text-xl font-bold text-slate-800 mb-2">🎯 Want to Do More?</h4>
+                        <p class="text-slate-600">Unlock the full potential of your forms with a free account</p>
                     </div>
                     
-                    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                        <div class="text-2xl mb-3">📊</div>
-                        <h5 class="font-semibold text-slate-800 mb-2">View Responses</h5>
-                        <p class="text-sm text-slate-600 mb-4">See all submissions in a beautiful dashboard with export options and analytics.</p>
-                        <a href="/register" class="inline-flex items-center text-blue-600 font-medium text-sm hover:text-blue-700">
-                            Create free account →
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-center">
+                            <div class="text-2xl mb-2">📱</div>
+                            <h5 class="font-semibold text-slate-800 text-sm mb-1">Share & Embed</h5>
+                            <p class="text-xs text-slate-600">Get links, QR codes & embed codes</p>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-center">
+                            <div class="text-2xl mb-2">📊</div>
+                            <h5 class="font-semibold text-slate-800 text-sm mb-1">Track Responses</h5>
+                            <p class="text-xs text-slate-600">Analytics & export options</p>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-center">
+                            <div class="text-2xl mb-2">🔔</div>
+                            <h5 class="font-semibold text-slate-800 text-sm mb-1">Email Alerts</h5>
+                            <p class="text-xs text-slate-600">Instant notifications</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-6">
+                        <a href="/register" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                            🎉 Create Free Account - No Credit Card
+                            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            </svg>
                         </a>
+                        <p class="text-xs text-slate-500 mt-2">✅ Setup in 30 seconds • ✅ No spam, ever</p>
                     </div>
                 </div>
             </div>
@@ -446,30 +520,115 @@
             document.querySelector('input[name="prompt"]').value = text;
         }
 
-        document.body.addEventListener("htmx:afterSwap", function (evt) {
-            const preview = document.getElementById("preview-box");
-            const wrapper = document.getElementById("preview-wrapper");
+        // Enhanced loading experience with progress steps
+        let loadingInterval;
+        const loadingTips = [
+            "💡 Tip: AutoForms supports Hebrew, English, and 3 other languages!",
+            "🚀 Fun fact: Your form will be mobile-responsive automatically!",
+            "✨ Did you know? You can customize your form after generation!",
+            "🎯 Pro tip: Try asking for specific field types like 'dropdown' or 'checkbox'!",
+            "🔥 Amazing: Forms start collecting data immediately!"
+        ];
 
-            if (preview && wrapper) {
-                wrapper.classList.remove("hidden");
-                wrapper.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-
+        document.body.addEventListener("htmx:beforeRequest", function () {
             const loader = document.getElementById("loader");
             if (loader) {
-                loader.innerHTML = `
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        ✅ Your form is ready!
-                    </div>
-                `;
-                setTimeout(() => {
-                    loader.style.display = "none";
-                }, 3000);
+                loader.style.display = "flex";
+                
+                let step = 1;
+                let tipIndex = 0;
+                
+                // Animate progress steps
+                loadingInterval = setInterval(() => {
+                    const progressBar = document.getElementById("progress-bar");
+                    const loadingMessage = document.getElementById("loading-message");
+                    const loadingTip = document.getElementById("loading-tip");
+                    
+                    if (step === 1) {
+                        progressBar.style.width = "66%";
+                        loadingMessage.textContent = "Generating form structure...";
+                        document.getElementById("step-1").innerHTML = `
+                            <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                            Prompt analyzed ✓
+                        `;
+                        step++;
+                    } else if (step === 2) {
+                        progressBar.style.width = "100%";
+                        loadingMessage.textContent = "Adding final touches...";
+                        step++;
+                    }
+                    
+                    // Cycle through tips
+                    if (loadingTip) {
+                        loadingTip.textContent = loadingTips[tipIndex % loadingTips.length];
+                        tipIndex++;
+                    }
+                }, 1500);
             }
         });
+
+        document.body.addEventListener("htmx:afterSwap", function (evt) {
+            // Clear loading interval
+            if (loadingInterval) {
+                clearInterval(loadingInterval);
+            }
+            
+            const preview = document.getElementById("preview-box");
+            const wrapper = document.getElementById("preview-wrapper");
+            const loader = document.getElementById("loader");
+
+            if (preview && wrapper) {
+                // Hide loader with success animation
+                if (loader) {
+                    const progressBar = document.getElementById("progress-bar");
+                    const loadingTitle = document.getElementById("loading-title");
+                    const loadingMessage = document.getElementById("loading-message");
+                    
+                    if (progressBar) progressBar.style.width = "100%";
+                    if (loadingTitle) loadingTitle.textContent = "🎉 Success!";
+                    if (loadingMessage) loadingMessage.textContent = "Your beautiful form is ready!";
+                    
+                    setTimeout(() => {
+                        loader.style.display = "none";
+                        wrapper.classList.remove("hidden");
+                        wrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 1000);
+                }
+            }
+        });
+
+        // Utility functions
+        function scrollToTop() {
+            document.querySelector('input[name="prompt"]').focus();
+            document.querySelector('.container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function downloadCurrentForm() {
+            const form = document.querySelector('#preview-box form');
+            if (form) {
+                // Create download form
+                const downloadForm = document.createElement('form');
+                downloadForm.method = 'post';
+                downloadForm.action = '/api/download-pdf';
+                downloadForm.target = '_blank';
+                
+                const htmlInput = document.createElement('input');
+                htmlInput.type = 'hidden';
+                htmlInput.name = 'html';
+                htmlInput.value = document.getElementById('preview-box').innerHTML;
+                
+                const titleInput = document.createElement('input');
+                titleInput.type = 'hidden';
+                titleInput.name = 'title';
+                titleInput.value = 'My AutoForm';
+                
+                downloadForm.appendChild(htmlInput);
+                downloadForm.appendChild(titleInput);
+                document.body.appendChild(downloadForm);
+                downloadForm.submit();
+                document.body.removeChild(downloadForm);
+            }
+        }
 
         document.body.addEventListener("htmx:beforeRequest", function () {
             const loader = document.getElementById("loader");
