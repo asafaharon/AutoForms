@@ -347,7 +347,7 @@
                 <!-- Primary Actions -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <button onclick="scrollToTop()" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                        🔄 Try Another Form
+                        🔄 Create Another Form
                     </button>
                     <button onclick="downloadCurrentForm()" class="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
                         📄 Download PDF
@@ -1063,6 +1063,18 @@
         ];
 
         document.body.addEventListener("htmx:beforeRequest", function () {
+            // Clear any previous results before new request
+            const previewWrapper = document.getElementById('preview-wrapper');
+            const previewBox = document.getElementById('preview-box');
+            
+            if (previewWrapper) {
+                previewWrapper.classList.add('hidden');
+            }
+            
+            if (previewBox) {
+                previewBox.innerHTML = '';
+            }
+            
             const loader = document.getElementById("loader");
             if (loader) {
                 loader.style.display = "flex";
@@ -1150,8 +1162,29 @@
 
         // Utility functions
         function scrollToTop() {
-            document.querySelector('input[name="prompt"]').focus();
+            // Clear previous results
+            const previewWrapper = document.getElementById('preview-wrapper');
+            const previewBox = document.getElementById('preview-box');
+            
+            if (previewWrapper) {
+                previewWrapper.classList.add('hidden');
+            }
+            
+            if (previewBox) {
+                previewBox.innerHTML = '';
+            }
+            
+            // Clear input and focus
+            const promptInput = document.querySelector('input[name="prompt"]');
+            promptInput.value = '';
+            promptInput.focus();
+            
+            // Smooth scroll to top
             document.querySelector('.container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Hide any open suggestions or helpers
+            hideSuggestions();
+            hideSmartHelper();
         }
 
         function downloadCurrentForm() {
