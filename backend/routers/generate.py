@@ -127,7 +127,7 @@ async def generate_demo_html(request: Request, prompt: str = Form(...)):
     
     # Validate input
     data = {'prompt': prompt}
-    is_valid, errors, sanitized_data = input_validator.validate_data(data, 'form_generation')
+    is_valid, errors, sanitized_data = input_validator.validate_data(data, 'demo_form_generation')
     if not is_valid:
         from fastapi import HTTPException
         from backend.services.error_handler import error_handler

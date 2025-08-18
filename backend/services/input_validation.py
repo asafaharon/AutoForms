@@ -57,6 +57,20 @@ class InputValidator:
             )
         },
         
+        'demo_form_generation': {
+            'prompt': ValidationRule(
+                required=True,
+                min_length=5,
+                max_length=2000,
+                custom_validator=lambda x: len(x.strip()) > 0
+            ),
+            'language': ValidationRule(
+                required=False,
+                pattern='language_code',
+                allowed_values=['en', 'he', 'es', 'fr', 'de']
+            )
+        },
+        
         'form_saving': {
             'title': ValidationRule(
                 required=True,
