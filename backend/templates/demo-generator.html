@@ -544,8 +544,14 @@
     </div>
 
     <!-- Interactive Onboarding Modal -->
-    <div id="onboarding-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl mx-4 overflow-hidden">
+    <div id="onboarding-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;" onclick="closeOnboardingIfClickedOutside(event)">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl mx-4 overflow-hidden relative" onclick="event.stopPropagation()">
+            <!-- Close button -->
+            <button onclick="skipOnboarding()" class="absolute top-4 right-4 w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors z-10">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
             <!-- Step 1: Welcome -->
             <div class="onboarding-step active" id="step-1">
                 <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 text-center">
@@ -618,15 +624,15 @@
                         <button onclick="prevOnboardingStep()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-6 rounded-xl transition">
                             ← Back
                         </button>
-                        <button onclick="nextOnboardingStep()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition">
-                            I'm Ready! ✨
+                        <button onclick="finishOnboarding()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition">
+                            Start Creating! ✨
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Step 3: Try It Now -->
-            <div class="onboarding-step" id="step-3" style="display: none;">
+            <!-- Step 3: Try It Now (Hidden - keeping for future use) -->
+            <div class="onboarding-step" id="step-3" style="display: none; visibility: hidden;">
                 <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-8 text-center">
                     <div class="text-6xl mb-4">🚀</div>
                     <h2 class="text-3xl font-bold mb-2">Your Turn!</h2>
@@ -677,8 +683,11 @@
         function nextOnboardingStep() {
             document.getElementById(`step-${currentOnboardingStep}`).style.display = 'none';
             currentOnboardingStep++;
-            if (currentOnboardingStep <= 3) {
+            if (currentOnboardingStep <= 2) {
                 document.getElementById(`step-${currentOnboardingStep}`).style.display = 'block';
+            } else {
+                // If we go beyond step 2, finish onboarding
+                finishOnboarding();
             }
         }
 
@@ -702,6 +711,24 @@
             // Show a welcome tooltip
             showWelcomeTooltip();
         }
+
+        function skipOnboarding() {
+            document.getElementById('onboarding-modal').style.display = 'none';
+            localStorage.setItem('autoforms-onboarding-completed', 'true');
+        }
+
+        function closeOnboardingIfClickedOutside(event) {
+            if (event.target.id === 'onboarding-modal') {
+                skipOnboarding();
+            }
+        }
+
+        // Add escape key to close onboarding
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && document.getElementById('onboarding-modal').style.display !== 'none') {
+                skipOnboarding();
+            }
+        });
 
         function showWelcomeTooltip() {
             const input = document.querySelector('input[name="prompt"]');
@@ -1039,9 +1066,10 @@
             }, 5000);
         }
 
-        // Initialize onboarding on page load
+        // Initialize onboarding on page load (reduce to 2 steps)
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(showOnboarding, 1000);
+            // Only show onboarding for first-time users and reduce delay
+            setTimeout(showOnboarding, 500);
             
             // Track form creation for achievements
             const formsCreated = parseInt(localStorage.getItem('forms_created') || '0');
