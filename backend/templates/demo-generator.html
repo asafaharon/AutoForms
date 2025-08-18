@@ -178,16 +178,44 @@
                             </label>
                             <div class="relative">
                                 <input type="text" 
+                                       id="prompt-input"
                                        name="prompt" 
                                        required 
                                        placeholder="e.g., 'Contact form for my restaurant' or 'Wedding RSVP with meal options'"
                                        class="w-full p-4 text-lg border-2 border-slate-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 bg-white shadow-sm pr-12"
-                                       autocomplete="off" />
+                                       autocomplete="off"
+                                       oninput="handlePromptInput()"
+                                       onkeydown="handleKeyDown(event)" />
+                                
+                                <!-- Smart Suggestions Dropdown -->
+                                <div id="suggestions-dropdown" class="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg z-30 mt-2 hidden max-h-80 overflow-y-auto">
+                                    <div class="p-3 border-b border-slate-100 bg-slate-50">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">🤖</span>
+                                            <span class="font-semibold text-sm text-slate-700">AI Suggestions</span>
+                                        </div>
+                                    </div>
+                                    <div id="suggestions-list" class="p-2">
+                                        <!-- Suggestions will be populated here -->
+                                    </div>
+                                </div>
+                                
                                 <div class="absolute right-4 top-1/2 transform -translate-y-1/2">
                                     <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                         </svg>
+                                    </div>
+                                </div>
+                                
+                                <!-- Smart Helper -->
+                                <div id="smart-helper" class="absolute -bottom-16 left-0 right-0 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm hidden">
+                                    <div class="flex items-start">
+                                        <span class="text-blue-500 mr-2">💡</span>
+                                        <div class="text-blue-800">
+                                            <div class="font-medium">Pro Tip:</div>
+                                            <div id="helper-text">Be specific about what fields you need for better results!</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -515,10 +543,514 @@
         </div>
     </div>
 
+    <!-- Interactive Onboarding Modal -->
+    <div id="onboarding-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl mx-4 overflow-hidden">
+            <!-- Step 1: Welcome -->
+            <div class="onboarding-step active" id="step-1">
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 text-center">
+                    <div class="text-6xl mb-4">🎉</div>
+                    <h2 class="text-3xl font-bold mb-2">Welcome to AutoForms!</h2>
+                    <p class="text-blue-100">Create professional forms in seconds using AI</p>
+                </div>
+                <div class="p-8">
+                    <div class="grid grid-cols-3 gap-6 mb-6">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-2xl">⚡</span>
+                            </div>
+                            <h4 class="font-semibold text-sm">Lightning Fast</h4>
+                            <p class="text-xs text-slate-600">30 seconds to form</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-2xl">🤖</span>
+                            </div>
+                            <h4 class="font-semibold text-sm">AI Powered</h4>
+                            <p class="text-xs text-slate-600">Just describe it</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-2xl">📱</span>
+                            </div>
+                            <h4 class="font-semibold text-sm">Mobile Ready</h4>
+                            <p class="text-xs text-slate-600">Works everywhere</p>
+                        </div>
+                    </div>
+                    <button onclick="nextOnboardingStep()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition">
+                        Let's Get Started! 🚀
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: How It Works -->
+            <div class="onboarding-step" id="step-2" style="display: none;">
+                <div class="bg-gradient-to-r from-green-500 to-teal-500 text-white p-8 text-center">
+                    <div class="text-6xl mb-4">🎯</div>
+                    <h2 class="text-3xl font-bold mb-2">How It Works</h2>
+                    <p class="text-green-100">Three simple steps to your perfect form</p>
+                </div>
+                <div class="p-8">
+                    <div class="space-y-4 mb-6">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-4">1</div>
+                            <div>
+                                <h4 class="font-semibold">Describe Your Form</h4>
+                                <p class="text-sm text-slate-600">Tell us what you need in plain English</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold mr-4">2</div>
+                            <div>
+                                <h4 class="font-semibold">AI Creates Magic</h4>
+                                <p class="text-sm text-slate-600">Watch as we build your form instantly</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-4">3</div>
+                            <div>
+                                <h4 class="font-semibold">Use & Share</h4>
+                                <p class="text-sm text-slate-600">Download, share, or save to your account</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="prevOnboardingStep()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-6 rounded-xl transition">
+                            ← Back
+                        </button>
+                        <button onclick="nextOnboardingStep()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition">
+                            I'm Ready! ✨
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Try It Now -->
+            <div class="onboarding-step" id="step-3" style="display: none;">
+                <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-8 text-center">
+                    <div class="text-6xl mb-4">🚀</div>
+                    <h2 class="text-3xl font-bold mb-2">Your Turn!</h2>
+                    <p class="text-purple-100">Try these popular examples or create your own</p>
+                </div>
+                <div class="p-8">
+                    <div class="grid grid-cols-2 gap-3 mb-6">
+                        <button onclick="tryExample('Contact form for my restaurant')" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 text-sm text-left transition">
+                            <div class="font-semibold text-blue-800">🍽️ Restaurant Contact</div>
+                            <div class="text-xs text-blue-600">Perfect for dining inquiries</div>
+                        </button>
+                        <button onclick="tryExample('Wedding RSVP with meal preferences')" class="bg-pink-50 hover:bg-pink-100 border border-pink-200 rounded-lg p-3 text-sm text-left transition">
+                            <div class="font-semibold text-pink-800">💒 Wedding RSVP</div>
+                            <div class="text-xs text-pink-600">Collect responses beautifully</div>
+                        </button>
+                        <button onclick="tryExample('Job application form with file upload')" class="bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg p-3 text-sm text-left transition">
+                            <div class="font-semibold text-green-800">💼 Job Application</div>
+                            <div class="text-xs text-green-600">Professional hiring forms</div>
+                        </button>
+                        <button onclick="tryExample('Event registration with payment info')" class="bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg p-3 text-sm text-left transition">
+                            <div class="font-semibold text-purple-800">🎫 Event Registration</div>
+                            <div class="text-xs text-purple-600">Manage event signups</div>
+                        </button>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="prevOnboardingStep()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-6 rounded-xl transition">
+                            ← Back
+                        </button>
+                        <button onclick="finishOnboarding()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition">
+                            Start Creating! 🎨
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let currentOnboardingStep = 1;
+        
+        // Show onboarding for first-time visitors
+        function showOnboarding() {
+            if (!localStorage.getItem('autoforms-onboarding-completed')) {
+                document.getElementById('onboarding-modal').style.display = 'flex';
+            }
+        }
+
+        function nextOnboardingStep() {
+            document.getElementById(`step-${currentOnboardingStep}`).style.display = 'none';
+            currentOnboardingStep++;
+            if (currentOnboardingStep <= 3) {
+                document.getElementById(`step-${currentOnboardingStep}`).style.display = 'block';
+            }
+        }
+
+        function prevOnboardingStep() {
+            document.getElementById(`step-${currentOnboardingStep}`).style.display = 'none';
+            currentOnboardingStep--;
+            document.getElementById(`step-${currentOnboardingStep}`).style.display = 'block';
+        }
+
+        function tryExample(prompt) {
+            finishOnboarding();
+            document.querySelector('input[name="prompt"]').value = prompt;
+            document.querySelector('input[name="prompt"]').focus();
+            document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function finishOnboarding() {
+            document.getElementById('onboarding-modal').style.display = 'none';
+            localStorage.setItem('autoforms-onboarding-completed', 'true');
+            
+            // Show a welcome tooltip
+            showWelcomeTooltip();
+        }
+
+        function showWelcomeTooltip() {
+            const input = document.querySelector('input[name="prompt"]');
+            const tooltip = document.createElement('div');
+            tooltip.className = 'absolute bg-blue-600 text-white px-4 py-2 rounded-lg text-sm shadow-lg z-10';
+            tooltip.innerHTML = '👋 Start typing your form idea here!';
+            tooltip.style.top = '120%';
+            tooltip.style.left = '50%';
+            tooltip.style.transform = 'translateX(-50%)';
+            
+            input.parentElement.style.position = 'relative';
+            input.parentElement.appendChild(tooltip);
+            
+            setTimeout(() => {
+                tooltip.remove();
+            }, 3000);
+        }
+
+        // Smart suggestions database
+        const smartSuggestions = {
+            'contact': [
+                'Contact form for my restaurant with reservation options',
+                'Business contact form with department routing',
+                'Simple contact form with name, email, and message',
+                'Contact form for real estate inquiries'
+            ],
+            'event': [
+                'Wedding RSVP with meal preferences and plus one',
+                'Corporate event registration with dietary requirements',
+                'Birthday party RSVP with gift preferences',
+                'Conference registration with workshop selection'
+            ],
+            'survey': [
+                'Customer satisfaction survey with rating scales',
+                'Employee feedback form with anonymous option',
+                'Market research survey with multiple choice',
+                'Product feedback form with image upload'
+            ],
+            'job': [
+                'Job application with resume upload and references',
+                'Freelancer application with portfolio links',
+                'Internship application for students',
+                'Volunteer registration form with availability'
+            ],
+            'registration': [
+                'Course registration with payment options',
+                'Gym membership signup with plan selection',
+                'Newsletter signup with preferences',
+                'Workshop registration with skill level'
+            ]
+        };
+
+        const helperTips = {
+            'short': 'Try adding more details like "with email field" or "for my business"',
+            'vague': 'Be more specific! What kind of information do you want to collect?',
+            'good': 'Great! Consider mentioning specific fields you need like phone, address, etc.',
+            'excellent': 'Perfect! This should create exactly what you need.'
+        };
+
+        let selectedSuggestion = -1;
+        let suggestionTimeout;
+
+        function handlePromptInput() {
+            const input = document.getElementById('prompt-input');
+            const value = input.value.toLowerCase().trim();
+            
+            clearTimeout(suggestionTimeout);
+            
+            if (value.length > 2) {
+                suggestionTimeout = setTimeout(() => {
+                    showSmartSuggestions(value);
+                    showSmartHelper(value);
+                }, 300);
+            } else {
+                hideSuggestions();
+                hideSmartHelper();
+            }
+        }
+
+        function showSmartSuggestions(query) {
+            const suggestions = generateSuggestions(query);
+            const dropdown = document.getElementById('suggestions-dropdown');
+            const list = document.getElementById('suggestions-list');
+            
+            if (suggestions.length > 0) {
+                list.innerHTML = '';
+                suggestions.forEach((suggestion, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'suggestion-item p-3 hover:bg-blue-50 cursor-pointer rounded-lg transition-colors';
+                    item.innerHTML = `
+                        <div class="flex items-center">
+                            <span class="text-lg mr-3">${suggestion.icon}</span>
+                            <div class="flex-1">
+                                <div class="font-medium text-slate-800 text-sm">${suggestion.title}</div>
+                                <div class="text-xs text-slate-600">${suggestion.description}</div>
+                            </div>
+                        </div>
+                    `;
+                    item.onclick = () => selectSuggestion(suggestion.prompt);
+                    list.appendChild(item);
+                });
+                dropdown.classList.remove('hidden');
+                selectedSuggestion = -1;
+            }
+        }
+
+        function generateSuggestions(query) {
+            const suggestions = [];
+            
+            // Keyword matching
+            Object.keys(smartSuggestions).forEach(category => {
+                if (query.includes(category) || query.includes(category.substring(0, 4))) {
+                    smartSuggestions[category].forEach(suggestion => {
+                        suggestions.push({
+                            title: suggestion,
+                            description: `Popular ${category} template`,
+                            prompt: suggestion,
+                            icon: getCategoryIcon(category)
+                        });
+                    });
+                }
+            });
+
+            // Smart completions
+            if (query.includes('form')) {
+                suggestions.push({
+                    title: query + ' with email notifications',
+                    description: 'Enhanced with automatic emails',
+                    prompt: query + ' with email notifications',
+                    icon: '📧'
+                });
+            }
+
+            return suggestions.slice(0, 6); // Limit to 6 suggestions
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'contact': '📞',
+                'event': '🎫',
+                'survey': '📊',
+                'job': '💼',
+                'registration': '📝'
+            };
+            return icons[category] || '📋';
+        }
+
+        function showSmartHelper(query) {
+            const helper = document.getElementById('smart-helper');
+            const helperText = document.getElementById('helper-text');
+            
+            let tip = helperTips.good;
+            if (query.length < 10) tip = helperTips.short;
+            else if (query.length < 20) tip = helperTips.vague;
+            else if (query.length > 50) tip = helperTips.excellent;
+            
+            helperText.textContent = tip;
+            helper.classList.remove('hidden');
+        }
+
+        function hideSuggestions() {
+            document.getElementById('suggestions-dropdown').classList.add('hidden');
+        }
+
+        function hideSmartHelper() {
+            document.getElementById('smart-helper').classList.add('hidden');
+        }
+
+        function handleKeyDown(event) {
+            const dropdown = document.getElementById('suggestions-dropdown');
+            const items = dropdown.querySelectorAll('.suggestion-item');
+            
+            if (dropdown.classList.contains('hidden')) return;
+            
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                selectedSuggestion = Math.min(selectedSuggestion + 1, items.length - 1);
+                updateSelectionHighlight(items);
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                selectedSuggestion = Math.max(selectedSuggestion - 1, -1);
+                updateSelectionHighlight(items);
+            } else if (event.key === 'Enter' && selectedSuggestion >= 0) {
+                event.preventDefault();
+                items[selectedSuggestion].click();
+            } else if (event.key === 'Escape') {
+                hideSuggestions();
+            }
+        }
+
+        function updateSelectionHighlight(items) {
+            items.forEach((item, index) => {
+                if (index === selectedSuggestion) {
+                    item.classList.add('bg-blue-100');
+                } else {
+                    item.classList.remove('bg-blue-100');
+                }
+            });
+        }
+
+        function selectSuggestion(prompt) {
+            document.getElementById('prompt-input').value = prompt;
+            hideSuggestions();
+            hideSmartHelper();
+        }
+
+        function setPromptWithPreview(prompt, category) {
+            document.getElementById('prompt-input').value = prompt;
+            document.getElementById('prompt-input').focus();
+            
+            // Show preview animation
+            showTemplatePreview(category);
+        }
+
+        function showTemplatePreview(category) {
+            // Add visual feedback when template is selected
+            const allCards = document.querySelectorAll('.template-card');
+            allCards.forEach(card => card.classList.remove('ring-2', 'ring-blue-400'));
+            
+            event.target.closest('.template-card').classList.add('ring-2', 'ring-blue-400');
+            
+            setTimeout(() => {
+                event.target.closest('.template-card').classList.remove('ring-2', 'ring-blue-400');
+            }, 1000);
+        }
+
         function fillPrompt(text) {
             document.querySelector('input[name="prompt"]').value = text;
         }
+
+        // Success celebration with confetti effect
+        function showSuccessCelebration() {
+            // Create confetti container
+            const confetti = document.createElement('div');
+            confetti.className = 'fixed inset-0 pointer-events-none z-40';
+            confetti.innerHTML = `
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    ${Array.from({length: 20}, (_, i) => `
+                        <div class="confetti-piece absolute animate-bounce" style="
+                            left: ${Math.random() * 200 - 100}px;
+                            top: ${Math.random() * 200 - 100}px;
+                            animation-delay: ${Math.random() * 0.5}s;
+                            animation-duration: ${0.5 + Math.random() * 0.5}s;
+                        ">
+                            <div class="w-3 h-3 bg-gradient-to-r ${getRandomColor()} rounded-full"></div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.body.appendChild(confetti);
+            
+            // Play success sound effect (visual feedback)
+            triggerSuccessVibration();
+            
+            setTimeout(() => {
+                confetti.remove();
+            }, 2000);
+        }
+
+        function getRandomColor() {
+            const colors = [
+                'from-red-400 to-red-500',
+                'from-blue-400 to-blue-500', 
+                'from-green-400 to-green-500',
+                'from-yellow-400 to-yellow-500',
+                'from-purple-400 to-purple-500',
+                'from-pink-400 to-pink-500'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function triggerSuccessVibration() {
+            // Haptic feedback for mobile devices
+            if ('vibrate' in navigator) {
+                navigator.vibrate([100, 50, 100]);
+            }
+            
+            // Visual pulse effect on success icon
+            const successIcon = document.querySelector('#preview-wrapper .text-3xl');
+            if (successIcon) {
+                successIcon.classList.add('animate-pulse');
+                setTimeout(() => {
+                    successIcon.classList.remove('animate-pulse');
+                }, 2000);
+            }
+        }
+
+        // Achievement system
+        function unlockAchievement(type) {
+            const achievements = {
+                'first_form': {
+                    title: '🎉 First Form Created!',
+                    description: 'Welcome to AutoForms! You\'ve created your first form.',
+                    icon: '🏆'
+                },
+                'power_user': {
+                    title: '💪 Power User!',
+                    description: 'You\'ve created 5+ forms. You\'re getting good at this!',
+                    icon: '⭐'
+                }
+            };
+
+            const achievement = achievements[type];
+            if (!achievement || localStorage.getItem(`achievement_${type}`)) return;
+            
+            localStorage.setItem(`achievement_${type}`, 'true');
+            showAchievementToast(achievement);
+        }
+
+        function showAchievementToast(achievement) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-6 right-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 rounded-xl shadow-2xl z-50 transform translate-x-full transition-transform duration-300';
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-2xl mr-3">${achievement.icon}</span>
+                    <div>
+                        <div class="font-bold">${achievement.title}</div>
+                        <div class="text-sm opacity-90">${achievement.description}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Slide in animation
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // Initialize onboarding on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(showOnboarding, 1000);
+            
+            // Track form creation for achievements
+            const formsCreated = parseInt(localStorage.getItem('forms_created') || '0');
+            if (formsCreated === 0) {
+                // Will unlock first form achievement after first creation
+            } else if (formsCreated >= 5) {
+                unlockAchievement('power_user');
+            }
+        });
 
         // Enhanced loading experience with progress steps
         let loadingInterval;
@@ -591,11 +1123,30 @@
                     setTimeout(() => {
                         loader.style.display = "none";
                         wrapper.classList.remove("hidden");
+                        
+                        // Success celebration with confetti
+                        showSuccessCelebration();
+                        
+                        // Track achievement
+                        trackFormCreation();
+                        
                         wrapper.scrollIntoView({ behavior: "smooth", block: "start" });
                     }, 1000);
                 }
             }
         });
+
+        // Track form creation for achievements
+        function trackFormCreation() {
+            const formsCreated = parseInt(localStorage.getItem('forms_created') || '0') + 1;
+            localStorage.setItem('forms_created', formsCreated.toString());
+            
+            if (formsCreated === 1) {
+                setTimeout(() => unlockAchievement('first_form'), 2000);
+            } else if (formsCreated === 5) {
+                setTimeout(() => unlockAchievement('power_user'), 2000);
+            }
+        }
 
         // Utility functions
         function scrollToTop() {
