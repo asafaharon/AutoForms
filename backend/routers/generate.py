@@ -10,7 +10,7 @@ from backend.services.db_transaction import TransactionManager
 from backend.services.input_validation import input_validator
 from backend.services.rate_limiter import api_rate_limiter
 from backend.services.websocket_manager import websocket_manager
-from backend.deps import get_current_user, get_db
+from backend.deps import get_current_user, get_current_user_optional, get_db
 from backend.models.user import UserPublic
 from backend.services.performance_monitor import perf_monitor
 from backend.utils import validate_object_id
@@ -101,23 +101,11 @@ def build_form_response_html(generated_html: str, for_demo: bool = False) -> str
 async def generate_html_preview(
     request: Request,
     prompt: str = Form(...),
-    lang: str = Form(None)
+    lang: str = Form(None),
+    user: UserPublic | None = Depends(get_current_user_optional)
 ):
-    from backend.deps import get_current_user_optional
-    
-    # Check if user is authenticated
-    try:
-        # Try to get user from cookie
-        token = request.cookies.get("token")
-        if token:
-            from backend.db import get_db
-            db = await get_db()
-            user = await get_current_user_optional(token, db)
-            is_authenticated = user is not None
-        else:
-            is_authenticated = False
-    except:
-        is_authenticated = False
+    # User is authenticated if the dependency injection returns a user object
+    is_authenticated = user is not None
     
     generated_html = await generate_html_only(prompt)
     if request.headers.get("Hx-Request"):
