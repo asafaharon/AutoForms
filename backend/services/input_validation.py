@@ -40,7 +40,7 @@ class InputValidator:
         'form_generation': {
             'prompt': ValidationRule(
                 required=True,
-                min_length=10,
+                min_length=5,
                 max_length=2000,
                 custom_validator=lambda x: len(x.strip()) > 0
             ),
