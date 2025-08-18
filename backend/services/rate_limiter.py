@@ -213,9 +213,9 @@ class APIRateLimiter:
             ),
             
             'form_generation_per_user': RateLimitRule(
-                max_requests=10,     # 10 form generations per hour
+                max_requests=25,     # 25 form generations per hour
                 window_seconds=3600,
-                cooldown_seconds=600
+                cooldown_seconds=300  # 5 minute cooldown instead of 10
             ),
             
             'form_submission': RateLimitRule(
